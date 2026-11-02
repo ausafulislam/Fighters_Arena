@@ -1,0 +1,70 @@
+/*
+ * Viewport / rendering shell only. No game screens or UI are defined here.
+ * The canvas itself is created and sized by Phaser's Scale Manager.
+ */
+
+:root {
+  color-scheme: dark;
+  --fa-background: #101014;
+  --fa-panel: #1b1b22;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--fa-background);
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* Touch gestures must reach the canvas instead of scrolling / zooming. */
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * 16:9 stage, capped at the 1280 x 720 target display resolution. Phaser uses
+ * Scale.FIT inside this parent, so a 640 x 360 internal canvas is upscaled by
+ * an integer factor (2x at the target size) on any landscape screen.
+ *
+ * A dedicated portrait-orientation lock / rotate prompt is a later phase; in
+ * portrait the stage simply stays letterboxed to 16:9.
+ */
+#game-root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100vw, 1280px, calc(100vh * 1.777778));
+  width: min(100vw, 1280px, calc(100dvh * 1.777778));
+  aspect-ratio: 16 / 9;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background-color: var(--fa-background);
+}
+
+#game-root canvas {
+  display: block;
+  outline: none;
+  /* Nearest-neighbour magnification for the pixel-art pipeline. */
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+}
