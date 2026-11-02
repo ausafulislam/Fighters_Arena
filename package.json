@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "FIGHTER'S ARENA - a 2D side-view modern HD pixel-art fighting game (Phase 1: project setup).",
+  "description": "FIGHTER'S ARENA - a 2D side-view modern HD pixel-art fighting game (Phase 3: Welcome Screen / Main Menu).",
   "license": "UNLICENSED",
   "engines": {
     "node": "^20.19.0 || >=22.12.0",

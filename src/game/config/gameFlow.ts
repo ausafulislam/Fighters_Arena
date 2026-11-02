@@ -1,6 +1,6 @@
 import { SCENE_KEYS } from '@/constants/scenes';
 
-/** The screen that follows loading. Registered in the next development phase. */
+/** The screen that follows loading (Phase 3 Welcome Screen / Main Menu). */
 export const NEXT_SCENE_KEY: string = SCENE_KEYS.WELCOME;
 
 interface SceneHandle {

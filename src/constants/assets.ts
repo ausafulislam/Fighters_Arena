@@ -27,6 +27,7 @@ export const assetUrl = (path: string): string => `${basePrefix}${path}`;
 /** Keys used with the Phaser texture / audio caches. */
 export const TEXTURE_KEYS = {
   ARENA_NIGHT: 'arena-night',
+  WELCOME_COURTYARD: 'welcome-courtyard',
   CLOUD_BANK: 'cloud-bank',
   KENJI: 'fighter-kenji',
   SHADOW: 'fighter-shadow',
@@ -36,6 +37,7 @@ export const TEXTURE_KEYS = {
   EMBER: 'fx-ember',
   FLAMES_WARM: 'fx-flames-warm',
   FLAMES_VIOLET: 'fx-flames-violet',
+  MENU_ICONS: 'ui-menu-icons',
 } as const;
 
 export const ANIMATION_KEYS = {
@@ -46,19 +48,38 @@ export const ANIMATION_KEYS = {
 /** URLs for every asset loaded by the boot / loading phases. */
 export const ASSET_URLS = {
   arenaNight: assetUrl(`${ASSET_PATHS.backgrounds}/arena_night.png`),
+  welcomeCourtyard: assetUrl(`${ASSET_PATHS.backgrounds}/welcome_courtyard.png`),
   cloudBank: assetUrl(`${ASSET_PATHS.backgrounds}/cloud_bank.png`),
   flamesWarm: assetUrl(`${ASSET_PATHS.backgrounds}/flames.png`),
   flamesViolet: assetUrl(`${ASSET_PATHS.backgrounds}/flames_violet.png`),
   kenji: assetUrl(`${ASSET_PATHS.spriteSheets}/kenji.png`),
   shadow: assetUrl(`${ASSET_PATHS.spriteSheets}/shadow.png`),
   logo: assetUrl(`${ASSET_PATHS.ui}/logo_fighters_arena.png`),
+  menuIcons: assetUrl(`${ASSET_PATHS.ui}/menu_icons.png`),
   glow: assetUrl(`${ASSET_PATHS.ui}/glow.png`),
   petal: assetUrl(`${ASSET_PATHS.ui}/petal.png`),
   ember: assetUrl(`${ASSET_PATHS.ui}/ember.png`),
   font: assetUrl(`${ASSET_PATHS.fonts}/anton-latin-400-normal.woff2`),
+  fontOxanium700: assetUrl(`${ASSET_PATHS.fonts}/oxanium-latin-700-normal.woff2`),
+  fontOxanium600: assetUrl(`${ASSET_PATHS.fonts}/oxanium-latin-600-normal.woff2`),
+  fontRajdhani700: assetUrl(`${ASSET_PATHS.fonts}/rajdhani-latin-700-normal.woff2`),
+  fontRajdhani600: assetUrl(`${ASSET_PATHS.fonts}/rajdhani-latin-600-normal.woff2`),
   themeOgg: assetUrl(`${ASSET_PATHS.music}/theme_main.ogg`),
   themeMp3: assetUrl(`${ASSET_PATHS.music}/theme_main.mp3`),
 } as const;
 
 /** The loading screen spritesheet frames are authored at 16 x 24 pixels. */
 export const FLAME_FRAME = { width: 16, height: 24, count: 4 } as const;
+
+/** Seven 24 x 24 pixel icons in one sheet (see process_welcome_assets.py). */
+export const MENU_ICON_FRAME = { width: 24, height: 24, count: 7 } as const;
+
+export const MENU_ICON_FRAMES = {
+  PLAY: 0,
+  SETTINGS: 1,
+  LEADERBOARD: 2,
+  ABOUT: 3,
+  QUIT: 4,
+  VOLUME: 5,
+  FULLSCREEN: 6,
+} as const;

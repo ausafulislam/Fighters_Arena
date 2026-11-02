@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-import { ASSET_URLS, FLAME_FRAME, TEXTURE_KEYS } from '@/constants/assets';
+import { ASSET_URLS, FLAME_FRAME, MENU_ICON_FRAME, TEXTURE_KEYS } from '@/constants/assets';
 import { LOADING_CONFIG } from '@/constants/loading';
 import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
@@ -100,7 +100,14 @@ export class LoadingScene extends Phaser.Scene {
       frameWidth: FLAME_FRAME.width,
       frameHeight: FLAME_FRAME.height,
     });
-    this.totalFiles = 10;
+    // Phase 3 screen assets are preloaded here too, so the Welcome Screen can
+    // appear immediately at 100% with no second loading phase or blank flash.
+    loader.image(TEXTURE_KEYS.WELCOME_COURTYARD, ASSET_URLS.welcomeCourtyard);
+    loader.spritesheet(TEXTURE_KEYS.MENU_ICONS, ASSET_URLS.menuIcons, {
+      frameWidth: MENU_ICON_FRAME.width,
+      frameHeight: MENU_ICON_FRAME.height,
+    });
+    this.totalFiles = 12;
     this.publish();
   }
 
@@ -244,10 +251,9 @@ export class LoadingScene extends Phaser.Scene {
   private handOff(): void {
     this.nextSceneStarted = startNextScene(this, this.nextSceneKey);
     if (!this.nextSceneStarted) {
-      // The Welcome Screen is intentionally not built in this phase. The
-      // soundtrack lives on the game-level AudioManager and keeps playing.
+      // The soundtrack lives on the game-level AudioManager and keeps playing.
       console.info(
-        `[FIGHTER'S ARENA] Loading complete. Scene "${this.nextSceneKey}" is not registered yet; it arrives in the next phase.`,
+        `[FIGHTER'S ARENA] Loading complete. Scene "${this.nextSceneKey}" is not registered.`,
       );
     }
     this.publish();
