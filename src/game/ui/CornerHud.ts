@@ -1,8 +1,8 @@
 import type Phaser from 'phaser';
 
-import { TEXTURE_KEYS } from '@/constants/assets';
 import { WELCOME_DEPTH, WELCOME_LAYOUT } from '@/constants/welcome';
 import { PALETTE_HEX } from '@/constants/palette';
+import { addIcon } from '@/utils/icons';
 import { hexagon } from '@/utils/shapes';
 
 /**
@@ -32,11 +32,9 @@ export class CornerHud {
         true,
       );
 
-      scene.add
-        .image(icon.x, cornerHud.y, TEXTURE_KEYS.MENU_ICONS, icon.frame)
-        .setScale(0.7)
-        .setTint(PALETTE_HEX.gold)
-        .setDepth(WELCOME_DEPTH.CORNER_HUD + 1);
+      addIcon(scene, icon.x, cornerHud.y, icon.icon, 15, PALETTE_HEX.gold).setDepth(
+        WELCOME_DEPTH.CORNER_HUD + 1,
+      );
     }
   }
 }

@@ -1,3 +1,5 @@
+import type { UiIcon } from '@/utils/icons';
+
 export type MenuAction = 'play' | 'settings' | 'leaderboard' | 'about' | 'quit';
 export type PopupKind = 'about' | 'settings';
 export type PopupCloseReason = 'button' | 'outside' | 'escape';
@@ -10,7 +12,7 @@ export interface MenuItemConfig {
   y: number;
   width: number;
   height: number;
-  iconFrame: number;
+  icon: UiIcon;
   variant: 'primary' | 'dark';
 }
 

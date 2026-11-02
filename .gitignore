@@ -48,3 +48,7 @@ Thumbs.db
 # are regenerated working output, not project assets.
 assets_work/audio_work/
 assets_work/preview/
+
+# Python pipeline caches
+__pycache__/
+*.pyc

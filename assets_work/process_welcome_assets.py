@@ -2,13 +2,16 @@
 
 Produces:
   * public/assets/arenas/backgrounds/welcome_courtyard.png  (640x360 plate)
-  * public/assets/ui/menu_icons.png                         (7 x 24x24 sheet)
   * assets_work/preview/welcome_icons.png                   (4x icon inspection)
   * assets_work/preview/welcome_preview.png                 (1280x720 layout check)
 
 The source plate is an original illustration; it is downsampled with
 nearest-neighbour filtering and gently graded to match the Phase 2 arena.
-All icons are authored as real pixel shapes, not font glyphs or emoji.
+
+NOTE: the 24px raster icon sheet this script used to emit was retired in
+Phase 4. All in-game icons now come from the vendored Lucide SVGs in
+public/assets/ui/icons/. The sheet is still generated locally as an art
+reference only; it is no longer shipped in public/assets/ui/.
 """
 
 from __future__ import annotations
@@ -153,7 +156,7 @@ def build_icons() -> Image.Image:
         frame = Image.new("RGBA", (ICON, ICON), CLEAR)
         draw(ImageDraw.Draw(frame))
         sheet.paste(outline(frame), (index * ICON, 0))
-    sheet.save(OUT / "ui" / "menu_icons.png", optimize=True)
+    sheet.save(PREVIEW / "welcome_icons_retired.png", optimize=True)
     sheet.resize((sheet.width * 4, sheet.height * 4), Image.Resampling.NEAREST).save(
         PREVIEW / "welcome_icons.png"
     )
@@ -249,7 +252,7 @@ def main() -> None:
     icons = build_icons()
     build_preview(bg, icons)
     print(f"background: {W}x{H}")
-    print(f"icons: {ICON_COUNT} frames x {ICON}x{ICON} -> {OUT / 'ui' / 'menu_icons.png'}")
+    print(f"icons: {ICON_COUNT} frames x {ICON}x{ICON} -> {PREVIEW / 'welcome_icons_retired.png'} (retired)")
     print("preview: assets_work/preview/welcome_preview.png")
 
 

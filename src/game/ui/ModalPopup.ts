@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/constants/game';
+import { pointerToLogical } from '@/utils/camera';
 import { WELCOME_CONFIG, WELCOME_DEPTH } from '@/constants/welcome';
 import { PALETTE_HEX } from '@/constants/palette';
 import type { PopupCloseReason } from '@/types/welcome';
 import { DISPLAY_FONT } from '@/utils/fonts';
 import { drawDiamond, octagon } from '@/utils/shapes';
+import { addUiText } from '@/utils/typography';
 
 export interface ModalPopupOptions {
   width: number;
@@ -51,12 +53,11 @@ export abstract class ModalPopup {
     this.drawFrame(frame);
     this.panel.add(frame);
 
-    const title = scene.add
-      .text(0, -this.height / 2 + 21, options.title, {
-        fontFamily: DISPLAY_FONT,
-        fontSize: '15px',
-        color: '#FFC247',
-      })
+    const title = addUiText(scene, 0, -this.height / 2 + 21, options.title, {
+      fontFamily: DISPLAY_FONT,
+      fontSize: '15px',
+      color: '#FFC247',
+    })
       .setOrigin(0.5)
       .setShadow(0, 1, '#000000', 3, false, true);
     this.panel.add(title);
@@ -132,8 +133,9 @@ export abstract class ModalPopup {
 
   private readonly onPointerDown = (pointer: Phaser.Input.Pointer): void => {
     if (this.closing) return;
-    const dx = Math.abs(pointer.x - GAME_WIDTH / 2);
-    const dy = Math.abs(pointer.y - GAME_HEIGHT / 2);
+    const world = pointerToLogical(this.scene, pointer.x, pointer.y);
+    const dx = Math.abs(world.x - GAME_WIDTH / 2);
+    const dy = Math.abs(world.y - GAME_HEIGHT / 2);
     if (dx <= this.width / 2 && dy <= this.height / 2) return;
     this.close('outside');
   };

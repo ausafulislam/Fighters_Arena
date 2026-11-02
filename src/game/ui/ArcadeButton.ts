@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 
-import { TEXTURE_KEYS } from '@/constants/assets';
 import { WELCOME_DEPTH } from '@/constants/welcome';
 import { PALETTE_HEX } from '@/constants/palette';
 import type { ButtonVariant } from '@/types/welcome';
+import { addIcon } from '@/utils/icons';
+import { addUiText } from '@/utils/typography';
+import type { UiIcon } from '@/utils/icons';
 import { MENU_FONT } from '@/utils/fonts';
 import { lerp } from '@/utils/math';
 import { octagon } from '@/utils/shapes';
@@ -16,7 +18,7 @@ export interface ArcadeButtonOptions {
   height: number;
   label: string;
   variant: ButtonVariant;
-  iconFrame?: number;
+  icon?: UiIcon;
   iconTint?: number;
   fontSize?: number;
   /** When set, the button lives inside this container (popup controls). */
@@ -62,23 +64,26 @@ export class ArcadeButton {
     this.frame = scene.add.graphics();
 
     this.icon =
-      options.iconFrame === undefined
+      options.icon === undefined
         ? null
-        : scene.add
-            .image(-width / 2 + 26, 0, TEXTURE_KEYS.MENU_ICONS, options.iconFrame)
-            .setScale(0.75)
-            .setTint(options.iconTint ?? PALETTE_HEX.white);
+        : addIcon(
+            scene,
+            -width / 2 + 26,
+            0,
+            options.icon,
+            18,
+            options.iconTint ?? PALETTE_HEX.white,
+          );
 
     const size = options.fontSize ?? (variant === 'primary' ? 17 : variant === 'compact' ? 11 : 15);
-    this.label = scene.add
-      .text(options.iconFrame === undefined ? 0 : 12, 0, label, {
-        fontFamily: MENU_FONT,
-        fontSize: `${size}px`,
-        fontStyle: 'normal',
-        color: '#FFFFFF',
-        stroke: variant === 'primary' ? '#7A2000' : '#101014',
-        strokeThickness: variant === 'compact' ? 2 : 3,
-      })
+    this.label = addUiText(scene, options.icon === undefined ? 0 : 12, 0, label, {
+      fontFamily: MENU_FONT,
+      fontSize: `${size}px`,
+      fontStyle: 'normal',
+      color: '#FFFFFF',
+      stroke: variant === 'primary' ? '#7A2000' : '#101014',
+      strokeThickness: variant === 'compact' ? 2 : 3,
+    })
       .setOrigin(0.5)
       .setShadow(0, 1, '#000000', 3, false, true);
 

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-import { GAME_HEIGHT, GAME_PARENT_ID, GAME_WIDTH, TARGET_FPS } from '@/constants/game';
+import { GAME_PARENT_ID, RENDER_HEIGHT, RENDER_WIDTH, TARGET_FPS } from '@/constants/game';
 import { BACKGROUND_COLOR } from '@/constants/palette';
 
 /**
@@ -8,12 +8,18 @@ import { BACKGROUND_COLOR } from '@/constants/palette';
  *
  * Engine-level settings only: rendering, resolution, scaling, timing and audio.
  * Scene classes are registered separately through sceneRegistry.ts.
+ *
+ * The canvas is 1280 x 720 (RENDER_SCALE = 2). Scenes keep the 640 x 360
+ * logical coordinate system by applying an integer camera zoom, so UI text and
+ * vector chrome get full display-resolution detail instead of being magnified
+ * from a 640 x 360 bitmap. Pixel-art plates are still doubled with nearest
+ * neighbour, which preserves the hard pixel edges of the art direction.
  */
 export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO, // WebGL when available, HTML5 Canvas fallback.
   parent: GAME_PARENT_ID,
-  width: GAME_WIDTH,
-  height: GAME_HEIGHT,
+  width: RENDER_WIDTH,
+  height: RENDER_HEIGHT,
   backgroundColor: BACKGROUND_COLOR,
 
   // Modern HD pixel art: no filtering, integer coordinates, crisp upscaling.
@@ -26,8 +32,8 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
+    width: RENDER_WIDTH,
+    height: RENDER_HEIGHT,
     autoRound: true,
   },
 

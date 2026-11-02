@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-import { ASSET_URLS, FLAME_FRAME, MENU_ICON_FRAME, TEXTURE_KEYS } from '@/constants/assets';
+import { ASSET_URLS, FLAME_FRAME, TEXTURE_KEYS } from '@/constants/assets';
 import { LOADING_CONFIG } from '@/constants/loading';
 import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
@@ -14,6 +14,8 @@ import { LoadingHud } from '@/game/ui/LoadingHud';
 import { LogoMark } from '@/game/ui/LogoMark';
 import { ProgressBar } from '@/game/ui/ProgressBar';
 import type { LoadingPhase, LoadingSceneData, LoadingSnapshot } from '@/types/loading';
+import { configureSceneCamera } from '@/utils/camera';
+import { applyIconFiltering, loadUiIcons } from '@/utils/icons';
 import { clamp } from '@/utils/math';
 
 /**
@@ -67,6 +69,7 @@ export class LoadingScene extends Phaser.Scene {
   }
 
   preload(): void {
+    configureSceneCamera(this);
     this.cameras.main.setBackgroundColor(BACKGROUND_COLOR);
 
     // Graphics / Text UI needs no files, so the bar is live during real loading.
@@ -100,14 +103,18 @@ export class LoadingScene extends Phaser.Scene {
       frameWidth: FLAME_FRAME.width,
       frameHeight: FLAME_FRAME.height,
     });
-    // Phase 3 screen assets are preloaded here too, so the Welcome Screen can
-    // appear immediately at 100% with no second loading phase or blank flash.
+    // Phase 3 / 4 screen assets are preloaded here too, so every later screen
+    // appears immediately at 100% with no second loading phase or blank flash.
     loader.image(TEXTURE_KEYS.WELCOME_COURTYARD, ASSET_URLS.welcomeCourtyard);
-    loader.spritesheet(TEXTURE_KEYS.MENU_ICONS, ASSET_URLS.menuIcons, {
-      frameWidth: MENU_ICON_FRAME.width,
-      frameHeight: MENU_ICON_FRAME.height,
-    });
-    this.totalFiles = 12;
+    loader.image(TEXTURE_KEYS.CARD_BATTLE, ASSET_URLS.cardBattle);
+    loader.image(TEXTURE_KEYS.CARD_TOURNAMENT, ASSET_URLS.cardTournament);
+    loader.image(TEXTURE_KEYS.CARD_VERSUS, ASSET_URLS.cardVersus);
+    loader.image(TEXTURE_KEYS.CARD_SURVIVAL, ASSET_URLS.cardSurvival);
+    // Lucide SVG icons replace the old low-resolution raster icon sheet.
+    loadUiIcons(loader);
+
+    // 11 Phase 2 files + courtyard + 4 card plates + 12 Lucide SVGs.
+    this.totalFiles = 27;
     this.publish();
   }
 
@@ -188,6 +195,7 @@ export class LoadingScene extends Phaser.Scene {
   }
 
   create(): void {
+    applyIconFiltering(this);
     this.ensureAllVisuals();
     this.background.startAnimations();
     this.logo.playEntrance();

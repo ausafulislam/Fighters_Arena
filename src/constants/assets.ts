@@ -14,6 +14,8 @@ export const ASSET_PATHS = {
   music: `${ASSET_ROOT}/audio/music`,
   sfx: `${ASSET_ROOT}/audio/sfx`,
   ui: `${ASSET_ROOT}/ui`,
+  icons: `${ASSET_ROOT}/ui/icons`,
+  cards: `${ASSET_ROOT}/cards`,
   fonts: `${ASSET_ROOT}/fonts`,
 } as const;
 
@@ -37,7 +39,10 @@ export const TEXTURE_KEYS = {
   EMBER: 'fx-ember',
   FLAMES_WARM: 'fx-flames-warm',
   FLAMES_VIOLET: 'fx-flames-violet',
-  MENU_ICONS: 'ui-menu-icons',
+  CARD_BATTLE: 'card-battle',
+  CARD_TOURNAMENT: 'card-tournament',
+  CARD_VERSUS: 'card-versus',
+  CARD_SURVIVAL: 'card-survival',
 } as const;
 
 export const ANIMATION_KEYS = {
@@ -55,10 +60,13 @@ export const ASSET_URLS = {
   kenji: assetUrl(`${ASSET_PATHS.spriteSheets}/kenji.png`),
   shadow: assetUrl(`${ASSET_PATHS.spriteSheets}/shadow.png`),
   logo: assetUrl(`${ASSET_PATHS.ui}/logo_fighters_arena.png`),
-  menuIcons: assetUrl(`${ASSET_PATHS.ui}/menu_icons.png`),
   glow: assetUrl(`${ASSET_PATHS.ui}/glow.png`),
   petal: assetUrl(`${ASSET_PATHS.ui}/petal.png`),
   ember: assetUrl(`${ASSET_PATHS.ui}/ember.png`),
+  cardBattle: assetUrl(`${ASSET_PATHS.cards}/card_battle.png`),
+  cardTournament: assetUrl(`${ASSET_PATHS.cards}/card_tournament.png`),
+  cardVersus: assetUrl(`${ASSET_PATHS.cards}/card_versus.png`),
+  cardSurvival: assetUrl(`${ASSET_PATHS.cards}/card_survival.png`),
   font: assetUrl(`${ASSET_PATHS.fonts}/anton-latin-400-normal.woff2`),
   fontOxanium700: assetUrl(`${ASSET_PATHS.fonts}/oxanium-latin-700-normal.woff2`),
   fontOxanium600: assetUrl(`${ASSET_PATHS.fonts}/oxanium-latin-600-normal.woff2`),
@@ -70,16 +78,3 @@ export const ASSET_URLS = {
 
 /** The loading screen spritesheet frames are authored at 16 x 24 pixels. */
 export const FLAME_FRAME = { width: 16, height: 24, count: 4 } as const;
-
-/** Seven 24 x 24 pixel icons in one sheet (see process_welcome_assets.py). */
-export const MENU_ICON_FRAME = { width: 24, height: 24, count: 7 } as const;
-
-export const MENU_ICON_FRAMES = {
-  PLAY: 0,
-  SETTINGS: 1,
-  LEADERBOARD: 2,
-  ABOUT: 3,
-  QUIT: 4,
-  VOLUME: 5,
-  FULLSCREEN: 6,
-} as const;

@@ -5,6 +5,7 @@ import { DEPTH, LOADING_CONFIG, LOADING_LAYOUT, LOADING_TIP } from '@/constants/
 import { FX_COLORS, PALETTE, PALETTE_HEX } from '@/constants/palette';
 import { UI_FONT_STACK } from '@/utils/fonts';
 import { createBottomVignetteTexture, RUNTIME_TEXTURES } from '@/utils/textures';
+import { addUiText } from '@/utils/typography';
 
 const PERCENTAGE_COLOR = '#FFFFFF';
 const TIP_COLOR = '#F5F0FA';
@@ -26,14 +27,13 @@ export class LoadingHud {
       .image(GAME_WIDTH / 2, GAME_HEIGHT - 38, RUNTIME_TEXTURES.BOTTOM_VIGNETTE)
       .setDepth(DEPTH.HUD - 2);
 
-    this.percentage = scene.add
-      .text(percentage.x, percentage.y, '0%', {
-        fontFamily: UI_FONT_STACK,
-        fontSize: '25px',
-        color: PERCENTAGE_COLOR,
-        stroke: '#20101E',
-        strokeThickness: 4,
-      })
+    this.percentage = addUiText(scene, percentage.x, percentage.y, '0%', {
+      fontFamily: UI_FONT_STACK,
+      fontSize: '25px',
+      color: PERCENTAGE_COLOR,
+      stroke: '#20101E',
+      strokeThickness: 4,
+    })
       .setOrigin(0.5)
       .setDepth(DEPTH.HUD + 3)
       .setShadow(0, 2, '#000000', 4, false, true);
@@ -49,13 +49,11 @@ export class LoadingHud {
       color: TIP_COLOR,
     };
 
-    this.tipLabel = scene.add
-      .text(0, tip.y, LOADING_TIP.label, labelStyle)
+    this.tipLabel = addUiText(scene, 0, tip.y, LOADING_TIP.label, labelStyle)
       .setOrigin(0, 0.5)
       .setDepth(DEPTH.HUD + 3)
       .setShadow(0, 1, '#000000', 4, false, true);
-    this.tipBody = scene.add
-      .text(0, tip.y, LOADING_TIP.body, bodyStyle)
+    this.tipBody = addUiText(scene, 0, tip.y, LOADING_TIP.body, bodyStyle)
       .setOrigin(0, 0.5)
       .setDepth(DEPTH.HUD + 3)
       .setShadow(0, 1, '#000000', 4, false, true);

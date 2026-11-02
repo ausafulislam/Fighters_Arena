@@ -7,6 +7,7 @@ import { MENU_FONT } from '@/utils/fonts';
 import { drawDiamond, octagon } from '@/utils/shapes';
 
 import { ArcadeButton } from './ArcadeButton';
+import { addUiText } from '@/utils/typography';
 
 interface MenuPanelCallbacks {
   onAction: (action: MenuAction) => void;
@@ -40,7 +41,7 @@ export class MenuPanel {
         height: item.height,
         label: item.label,
         variant: item.variant,
-        iconFrame: item.iconFrame,
+        icon: item.icon,
         iconTint: item.action === 'leaderboard' ? PALETTE_HEX.gold : PALETTE_HEX.white,
         onSelect: () => {
           this.callbacks.onAction(item.action);
@@ -68,13 +69,12 @@ export class MenuPanel {
     drawDiamond(this.tagline, x - width / 2 + 1, y, 4, PALETTE_HEX.gold);
     drawDiamond(this.tagline, x + width / 2 - 1, y, 4, PALETTE_HEX.gold);
 
-    this.taglineText = scene.add
-      .text(x, y, WELCOME_TEXT.tagline, {
-        fontFamily: MENU_FONT,
-        fontSize: '12px',
-        fontStyle: 'italic',
-        color: '#F5F0FA',
-      })
+    this.taglineText = addUiText(scene, x, y, WELCOME_TEXT.tagline, {
+      fontFamily: MENU_FONT,
+      fontSize: '12px',
+      fontStyle: 'italic',
+      color: '#F5F0FA',
+    })
       .setOrigin(0.5)
       .setDepth(WELCOME_DEPTH.MENU)
       .setShadow(0, 1, '#000000', 3, false, true);

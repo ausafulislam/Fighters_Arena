@@ -6,6 +6,7 @@ import { BODY_FONT, DISPLAY_MEDIUM_FONT } from '@/utils/fonts';
 
 import { ArcadeButton } from './ArcadeButton';
 import { ModalPopup } from './ModalPopup';
+import { addUiText } from '@/utils/typography';
 
 export type AboutDismiss = (reason: PopupCloseReason) => void;
 
@@ -24,25 +25,27 @@ export class AboutPopup extends ModalPopup {
     const logo = this.scene.add.image(0, -44, TEXTURE_KEYS.LOGO).setScale(0.4).setAlpha(0.95);
     panel.add(logo);
 
-    const description = this.scene.add
-      .text(0, 1, WELCOME_TEXT.aboutDescription, {
-        fontFamily: BODY_FONT,
-        fontSize: '13px',
-        color: '#E9E5F2',
-        align: 'center',
-        wordWrap: { width: 338 },
-        lineSpacing: 3,
-      })
-      .setOrigin(0.5, 0);
+    const description = addUiText(this.scene, 0, 1, WELCOME_TEXT.aboutDescription, {
+      fontFamily: BODY_FONT,
+      fontSize: '13px',
+      color: '#E9E5F2',
+      align: 'center',
+      wordWrap: { width: 338 },
+      lineSpacing: 3,
+    }).setOrigin(0.5, 0);
     panel.add(description);
 
-    const meta = this.scene.add
-      .text(0, 72, `${WELCOME_TEXT.gameName}   ·   VERSION ${WELCOME_TEXT.version}`, {
+    const meta = addUiText(
+      this.scene,
+      0,
+      72,
+      `${WELCOME_TEXT.gameName}   ·   VERSION ${WELCOME_TEXT.version}`,
+      {
         fontFamily: DISPLAY_MEDIUM_FONT,
         fontSize: '10px',
         color: '#FFC247',
-      })
-      .setOrigin(0.5);
+      },
+    ).setOrigin(0.5);
     panel.add(meta);
 
     const divider = this.scene.add.graphics();

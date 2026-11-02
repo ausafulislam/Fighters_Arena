@@ -3,11 +3,22 @@
  * These are configuration values only - no gameplay logic lives here.
  */
 
-/** Internal (authoring) resolution: all art and coordinates target this size. */
+/** Logical (authoring) resolution: all art and coordinates target this size. */
 export const GAME_WIDTH = 640;
 export const GAME_HEIGHT = 360;
 
-/** Target display resolution: exactly 2x the internal resolution. */
+/**
+ * The framebuffer is rendered at 2x the logical resolution. Every scene uses an
+ * integer camera zoom (see utils/camera.ts) so game code keeps working in
+ * 640 x 360 coordinates while Text, SVG icons and vector Graphics are actually
+ * rasterised with 1280 x 720 worth of pixels. Rendering UI into a 640 x 360
+ * canvas and CSS-upscaling it was the root cause of the blurry text and icons.
+ */
+export const RENDER_SCALE = 2;
+export const RENDER_WIDTH = GAME_WIDTH * RENDER_SCALE;
+export const RENDER_HEIGHT = GAME_HEIGHT * RENDER_SCALE;
+
+/** Target display resolution: exactly the framebuffer size (1:1, no upscaling). */
 export const TARGET_DISPLAY_WIDTH = 1280;
 export const TARGET_DISPLAY_HEIGHT = 720;
 

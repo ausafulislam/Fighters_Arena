@@ -1,5 +1,6 @@
 import { GAME_HEIGHT, GAME_WIDTH } from './game';
 import type { MenuItemConfig } from '@/types/welcome';
+import type { UiIcon } from '@/utils/icons';
 
 const W = GAME_WIDTH;
 const H = GAME_HEIGHT;
@@ -24,8 +25,8 @@ export const WELCOME_LAYOUT = {
     width: 30,
     height: 28,
     icons: [
-      { x: 566, frame: 5 },
-      { x: 610, frame: 6 },
+      { x: 566, icon: 'volume-2' as UiIcon },
+      { x: 610, icon: 'maximize' as UiIcon },
     ],
   },
   tagline: { x: W / 2, y: 341, width: 164, height: 22 },
@@ -62,7 +63,7 @@ export const MENU_ITEMS: readonly MenuItemConfig[] = [
     y: 184,
     width: 190,
     height: 32,
-    iconFrame: 0,
+    icon: 'play',
     variant: 'primary',
   },
   {
@@ -71,7 +72,7 @@ export const MENU_ITEMS: readonly MenuItemConfig[] = [
     y: 218,
     width: 186,
     height: 26,
-    iconFrame: 1,
+    icon: 'settings',
     variant: 'dark',
   },
   {
@@ -80,7 +81,7 @@ export const MENU_ITEMS: readonly MenuItemConfig[] = [
     y: 247,
     width: 186,
     height: 26,
-    iconFrame: 2,
+    icon: 'trophy',
     variant: 'dark',
   },
   {
@@ -89,10 +90,18 @@ export const MENU_ITEMS: readonly MenuItemConfig[] = [
     y: 276,
     width: 186,
     height: 26,
-    iconFrame: 3,
+    icon: 'info',
     variant: 'dark',
   },
-  { action: 'quit', label: 'QUIT', y: 305, width: 186, height: 26, iconFrame: 4, variant: 'dark' },
+  {
+    action: 'quit',
+    label: 'QUIT',
+    y: 305,
+    width: 186,
+    height: 26,
+    icon: 'log-out',
+    variant: 'dark',
+  },
 ] as const;
 
 export const WELCOME_TEXT = {

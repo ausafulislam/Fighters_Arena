@@ -2,6 +2,7 @@ import { REGISTRY_KEYS } from '@/constants/scenes';
 import type { AudioSnapshot } from '@/types/audio';
 import type { LoadingSnapshot } from '@/types/loading';
 import type { MobileSettings, WelcomeSnapshot } from '@/types/welcome';
+import type { GameModeSnapshot } from '@/types/gameModes';
 
 interface DebugRegistry {
   registry: { get: (key: string) => unknown };
@@ -12,6 +13,7 @@ export interface FADebugState {
   loading: LoadingSnapshot | undefined;
   audio: AudioSnapshot | undefined;
   menu: WelcomeSnapshot | undefined;
+  mode: GameModeSnapshot | undefined;
   mobileSettings: MobileSettings | undefined;
   activeScenes: string[];
 }
@@ -22,6 +24,7 @@ declare global {
       state: () => FADebugState;
       loadingCompleteEvents: number;
       welcomeReadyEvents: number;
+      modeReadyEvents: number;
       /** DEV-only raw game handle for inspecting the Web Audio gain node. */
       game: unknown;
     };
@@ -33,11 +36,15 @@ export function exposeDebugBridge(game: unknown): void {
   const g = game as DebugRegistry;
   let completionEvents = 0;
   let welcomeEvents = 0;
+  let modeEvents = 0;
   window.addEventListener('fighters-arena:loading-complete', () => {
     completionEvents += 1;
   });
   window.addEventListener('fighters-arena:welcome-ready', () => {
     welcomeEvents += 1;
+  });
+  window.addEventListener('fighters-arena:mode-ready', () => {
+    modeEvents += 1;
   });
 
   window.__FA__ = {
@@ -46,6 +53,7 @@ export function exposeDebugBridge(game: unknown): void {
       loading: g.registry.get(REGISTRY_KEYS.LOADING_STATE) as LoadingSnapshot | undefined,
       audio: g.registry.get(REGISTRY_KEYS.AUDIO_STATE) as AudioSnapshot | undefined,
       menu: g.registry.get(REGISTRY_KEYS.MENU_STATE) as WelcomeSnapshot | undefined,
+      mode: g.registry.get(REGISTRY_KEYS.MODE_STATE) as GameModeSnapshot | undefined,
       mobileSettings: g.registry.get(REGISTRY_KEYS.MOBILE_SETTINGS) as MobileSettings | undefined,
       activeScenes: g.scene.getScenes(true).map((scene) => scene.scene.key),
     }),
@@ -54,6 +62,9 @@ export function exposeDebugBridge(game: unknown): void {
     },
     get welcomeReadyEvents() {
       return welcomeEvents;
+    },
+    get modeReadyEvents() {
+      return modeEvents;
     },
   };
 }

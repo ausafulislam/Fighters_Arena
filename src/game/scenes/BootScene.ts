@@ -5,6 +5,7 @@ import { BACKGROUND_COLOR } from '@/constants/palette';
 import { SCENE_KEYS } from '@/constants/scenes';
 import { AudioManager } from '@/game/audio/AudioManager';
 import { MUSIC_KEYS } from '@/game/audio/audioKeys';
+import { configureSceneCamera } from '@/utils/camera';
 
 /**
  * Infrastructure-only boot phase (no visuals, no screen).
@@ -20,6 +21,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   init(): void {
+    configureSceneCamera(this);
     AudioManager.getInstance().attach(this.game);
     this.cameras.main.setBackgroundColor(BACKGROUND_COLOR);
   }

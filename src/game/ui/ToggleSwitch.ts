@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { PALETTE_HEX } from '@/constants/palette';
 import { DISPLAY_MEDIUM_FONT } from '@/utils/fonts';
 import { octagon } from '@/utils/shapes';
+import { addUiText } from '@/utils/typography';
 
 export interface ToggleSwitchOptions {
   x: number;
@@ -32,13 +33,11 @@ export class ToggleSwitch {
     this.container = scene.add.container(options.x, options.y);
     options.parent.add(this.container);
 
-    this.stateText = scene.add
-      .text(-30, 0, '', {
-        fontFamily: DISPLAY_MEDIUM_FONT,
-        fontSize: '9px',
-        color: '#FFC247',
-      })
-      .setOrigin(1, 0.5);
+    this.stateText = addUiText(scene, -30, 0, '', {
+      fontFamily: DISPLAY_MEDIUM_FONT,
+      fontSize: '9px',
+      color: '#FFC247',
+    }).setOrigin(1, 0.5);
     this.track = scene.add.graphics();
     this.knob = scene.add.rectangle(0, 0, 12, 12, 0xf5f0fa).setStrokeStyle(1, 0x3a3648);
 

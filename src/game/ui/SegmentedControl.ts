@@ -5,6 +5,7 @@ import type { TouchControlSize } from '@/types/welcome';
 import { DISPLAY_MEDIUM_FONT } from '@/utils/fonts';
 import { clamp } from '@/utils/math';
 import { octagon } from '@/utils/shapes';
+import { addUiText } from '@/utils/typography';
 
 export interface SegmentOption {
   label: string;
@@ -42,13 +43,11 @@ export class SegmentedControl {
     const segmentWidth = options.width / options.options.length;
     options.options.forEach((option, index) => {
       const cx = -options.width / 2 + segmentWidth * (index + 0.5);
-      const text = scene.add
-        .text(cx, 0, option.label, {
-          fontFamily: DISPLAY_MEDIUM_FONT,
-          fontSize: '9px',
-          color: '#FFFFFF',
-        })
-        .setOrigin(0.5);
+      const text = addUiText(scene, cx, 0, option.label, {
+        fontFamily: DISPLAY_MEDIUM_FONT,
+        fontSize: '9px',
+        color: '#FFFFFF',
+      }).setOrigin(0.5);
       this.labels.push(text);
       this.container.add(text);
     });

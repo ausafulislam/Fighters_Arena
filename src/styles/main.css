@@ -40,12 +40,16 @@ body {
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   font-family: var(--fa-font);
+  /* Native, correctly-hinted text for the HTML orientation notice. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /*
- * 16:9 stage, capped at the 1280 x 720 target display resolution. Phaser uses
- * Scale.FIT inside this parent, so a 640 x 360 internal canvas is upscaled by
- * an integer factor (2x at the target size) on any landscape screen.
+ * 16:9 stage, capped at the 1280 x 720 framebuffer resolution. Phaser uses
+ * Scale.FIT inside this parent; on smaller landscape screens the high-DPI
+ * canvas is reduced smoothly, never stretched or distorted.
  */
 #game-root {
   position: relative;
@@ -61,14 +65,17 @@ body {
   background-color: var(--fa-background);
 }
 
+/*
+ * The framebuffer is 1280 x 720 and the CSS stage is capped at 1280 x 720, so
+ * the canvas is never magnified - it is either shown 1:1 or smoothly reduced.
+ * Nearest-neighbour CSS magnification of a 640 x 360 canvas was what made the
+ * UI look blurry and jagged. Pixel art stays crisp because Phaser itself
+ * doubles the plates with nearest-neighbour filtering at an integer zoom.
+ */
 #game-root canvas {
   display: block;
   outline: none;
-  /* Nearest-neighbour magnification for the pixel-art pipeline. */
-  image-rendering: -moz-crisp-edges;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
-  -ms-interpolation-mode: nearest-neighbor;
+  image-rendering: auto;
 }
 
 /* --- Landscape-only guard ------------------------------------------------ */

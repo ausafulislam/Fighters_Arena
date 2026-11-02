@@ -8,6 +8,7 @@ import { ArcadeButton } from './ArcadeButton';
 import { ModalPopup } from './ModalPopup';
 import { SegmentedControl } from './SegmentedControl';
 import { ToggleSwitch } from './ToggleSwitch';
+import { addUiText } from '@/utils/typography';
 
 export type SettingsDismiss = (reason: PopupCloseReason) => void;
 
@@ -42,13 +43,11 @@ export class SettingsPopup extends ModalPopup {
     ];
     for (const row of rows) {
       panel.add(
-        this.scene.add
-          .text(left, row.y, row.label, {
-            fontFamily: BODY_FONT,
-            fontSize: '12px',
-            color: '#E9E5F2',
-          })
-          .setOrigin(0, 0.5),
+        addUiText(this.scene, left, row.y, row.label, {
+          fontFamily: BODY_FONT,
+          fontSize: '12px',
+          color: '#E9E5F2',
+        }).setOrigin(0, 0.5),
       );
     }
 

@@ -4,6 +4,7 @@ import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
 import { WELCOME_CONFIG } from '@/constants/welcome';
 import { loadMobileSettings } from '@/game/settings/mobileSettings';
+import { configureSceneCamera } from '@/utils/camera';
 import { CornerHud } from '@/game/ui/CornerHud';
 import { AboutPopup } from '@/game/ui/AboutPopup';
 import { MenuPanel } from '@/game/ui/MenuPanel';
@@ -32,6 +33,7 @@ export class WelcomeScene extends Phaser.Scene {
   private menu!: MenuPanel;
   private popup: ModalPopup | null = null;
   private snapshot!: WelcomeSnapshot;
+  private transitioning = false;
 
   constructor() {
     super(SCENE_KEYS.WELCOME);
@@ -39,6 +41,7 @@ export class WelcomeScene extends Phaser.Scene {
 
   init(data?: WelcomeSceneData): void {
     this.popup = null;
+    this.transitioning = false;
     this.snapshot = {
       sceneKey: SCENE_KEYS.WELCOME,
       activePopup: null,
@@ -54,6 +57,7 @@ export class WelcomeScene extends Phaser.Scene {
   }
 
   create(): void {
+    configureSceneCamera(this);
     this.cameras.main.setBackgroundColor(BACKGROUND_COLOR);
     this.stage = new WelcomeStage(this);
     new CornerHud(this);
@@ -74,14 +78,29 @@ export class WelcomeScene extends Phaser.Scene {
   }
 
   private handleAction(action: MenuAction): void {
+    if (this.transitioning) return;
     this.snapshot.pressCounts[action] += 1;
-    if (action === 'about' || action === 'settings') {
+    if (action === 'play') {
+      // Phase 4: PLAY is the one real navigation path - to Game Mode Selection.
+      this.goToModeSelect();
+    } else if (action === 'about' || action === 'settings') {
       this.openPopup(action);
     } else {
-      // Visual feedback only: no navigation to unfinished screens.
+      // LEADERBOARD and QUIT stay display-only with press feedback.
       this.menu.pressAction(action);
     }
     this.publish();
+  }
+
+  /** Camera fade out, then hand off. AudioManager is game-level and untouched. */
+  private goToModeSelect(): void {
+    this.transitioning = true;
+    this.menu.pressAction('play');
+    this.menu.setInteractiveEnabled(false);
+    this.cameras.main.fadeOut(280, 16, 16, 20);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.start(SCENE_KEYS.MODE_SELECT, { from: SCENE_KEYS.WELCOME });
+    });
   }
 
   private openPopup(kind: PopupKind): void {
