@@ -1,12 +1,16 @@
 /*
- * Viewport / rendering shell only. No game screens or UI are defined here.
- * The canvas itself is created and sized by Phaser's Scale Manager.
+ * Viewport / rendering shell. No game screens are defined in CSS; the canvas
+ * is created and sized by Phaser's Scale Manager.
  */
 
 :root {
   color-scheme: dark;
   --fa-background: #101014;
   --fa-panel: #1b1b22;
+  --fa-orange: #ff5a00;
+  --fa-gold: #ffc247;
+  --fa-white: #ffffff;
+  --fa-font: 'FA Anton', 'Arial Black', Impact, sans-serif;
 }
 
 *,
@@ -35,15 +39,13 @@ body {
   touch-action: none;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  font-family: var(--fa-font);
 }
 
 /*
  * 16:9 stage, capped at the 1280 x 720 target display resolution. Phaser uses
  * Scale.FIT inside this parent, so a 640 x 360 internal canvas is upscaled by
  * an integer factor (2x at the target size) on any landscape screen.
- *
- * A dedicated portrait-orientation lock / rotate prompt is a later phase; in
- * portrait the stage simply stays letterboxed to 16:9.
  */
 #game-root {
   position: relative;
@@ -67,4 +69,70 @@ body {
   image-rendering: crisp-edges;
   image-rendering: pixelated;
   -ms-interpolation-mode: nearest-neighbor;
+}
+
+/* --- Landscape-only guard ------------------------------------------------ */
+
+#rotate-notice {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 45%, #1b1b22 0%, var(--fa-background) 72%);
+  color: var(--fa-white);
+}
+
+.rotate-icon {
+  width: 76px;
+  height: 76px;
+  margin-bottom: 6px;
+  animation: rotate-nudge 2.4s ease-in-out infinite;
+}
+
+.rotate-title {
+  margin: 0;
+  font-size: clamp(18px, 4.5vw, 28px);
+  letter-spacing: 0.12em;
+  color: var(--fa-gold);
+  text-shadow: 0 2px 0 #4b176f;
+}
+
+.rotate-subtitle {
+  margin: 0;
+  max-width: 32ch;
+  font-family: system-ui, sans-serif;
+  font-size: clamp(12px, 2.4vw, 15px);
+  line-height: 1.5;
+  color: #cfc6db;
+}
+
+@keyframes rotate-nudge {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-12deg);
+  }
+}
+
+@media (orientation: portrait) {
+  #game-root {
+    display: none;
+  }
+
+  #rotate-notice {
+    display: flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotate-icon {
+    animation: none;
+  }
 }

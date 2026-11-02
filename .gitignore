@@ -42,3 +42,9 @@ Thumbs.db
 # --- Temporary / binary artefacts that must not enter the repository -------
 *.asar
 *.tmp
+
+# Offline art/audio pipelines keep their source plates and scripts, but the
+# large WAV master, spectrogram, composite previews and browser screenshots
+# are regenerated working output, not project assets.
+assets_work/audio_work/
+assets_work/preview/

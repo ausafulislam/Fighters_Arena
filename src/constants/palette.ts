@@ -30,3 +30,17 @@ export const PALETTE_HEX = {
 
 /** Default clear colour for the Phaser game canvas. */
 export const BACKGROUND_COLOR = PALETTE.background;
+
+/** Supporting tones for lighting, atmosphere and HUD chrome. */
+export const FX_COLORS = {
+  moonGlow: 0xffe2b0,
+  violetGlow: 0x9b4dff,
+  emberOrange: 0xffa22e,
+  cloudTint: 0x9682cd,
+  petalPink: 0xff8cc8,
+  petalMagenta: 0xf25fa8,
+  petalDeep: 0xc9408a,
+  barTrack: 0x1b1b22,
+  barBorder: 0x8a8296,
+  inkShadow: 0x20101e,
+} as const;

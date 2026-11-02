@@ -6,8 +6,8 @@ import { BACKGROUND_COLOR } from '@/constants/palette';
 /**
  * Engine-level Phaser configuration for the whole project.
  *
- * Phase 1 scope: rendering, resolution, scaling, timing and audio only.
- * No scenes, characters, arenas or gameplay systems are registered here yet.
+ * Engine-level settings only: rendering, resolution, scaling, timing and audio.
+ * Scene classes are registered separately through sceneRegistry.ts.
  */
 export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO, // WebGL when available, HTML5 Canvas fallback.
@@ -41,7 +41,4 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
   },
 
   banner: false,
-
-  // Intentionally empty: no game screens or scenes exist in Phase 1.
-  scene: [],
 };

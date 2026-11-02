@@ -15,6 +15,43 @@
   </head>
   <body>
     <main id="game-root" aria-label="FIGHTER'S ARENA game viewport"></main>
+
+    <!-- Orientation guard: replaces the game viewport in portrait. -->
+    <div id="rotate-notice" role="status" aria-live="polite">
+      <svg class="rotate-icon" viewBox="0 0 80 80" aria-hidden="true" focusable="false">
+        <rect
+          x="26"
+          y="10"
+          width="34"
+          height="56"
+          rx="5"
+          fill="none"
+          stroke="#FFC247"
+          stroke-width="3"
+        />
+        <line
+          x1="37"
+          y1="16"
+          x2="49"
+          y2="16"
+          stroke="#FFC247"
+          stroke-width="3"
+          stroke-linecap="round"
+        />
+        <circle cx="43" cy="60" r="2.5" fill="#FF5A00" />
+        <path
+          d="M12 46 A30 30 0 0 1 42 18"
+          fill="none"
+          stroke="#FF5A00"
+          stroke-width="3.5"
+          stroke-linecap="round"
+        />
+        <path d="M8 39 L12 47 L20 44 Z" fill="#FF5A00" />
+      </svg>
+      <p class="rotate-title">ROTATE YOUR DEVICE</p>
+      <p class="rotate-subtitle">FIGHTER'S ARENA is built for landscape play.</p>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
