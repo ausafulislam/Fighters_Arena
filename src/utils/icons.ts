@@ -26,6 +26,10 @@ export const UI_ICONS = {
   VERSUS: 'users-round',
   SURVIVAL: 'shield',
   CLOSE: 'x',
+  MUTED: 'volume-x',
+  MINIMIZE: 'minimize',
+  RANDOM: 'shuffle',
+  QUESTION: 'circle-help',
 } as const;
 
 export type UiIcon = (typeof UI_ICONS)[keyof typeof UI_ICONS];
@@ -41,14 +45,18 @@ export const iconAssetUrl = (name: string): string =>
   assetUrl(`${ASSET_PATHS.ui}/icons/${name}.svg`);
 
 /** Queue every icon once during the loading screen, before any menu renders. */
-export function loadUiIcons(loader: Phaser.Loader.LoaderPlugin): void {
+export function loadUiIcons(loader: Phaser.Loader.LoaderPlugin): number {
   for (const name of ICON_FILES) {
     loader.svg(iconTextureKey(name), iconAssetUrl(name), {
       width: ICON_RASTER_SIZE,
       height: ICON_RASTER_SIZE,
     });
   }
+  return ICON_FILES.length;
 }
+
+/** Number of distinct icon files queued by `loadUiIcons`. */
+export const UI_ICON_COUNT = ICON_FILES.length;
 
 /** SVG strokes benefit from smooth filtering; the pixel-art textures do not. */
 export function applyIconFiltering(scene: Phaser.Scene): void {

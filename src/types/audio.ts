@@ -7,7 +7,11 @@ export interface AudioSnapshot {
   locked: boolean;
   musicState: MusicState;
   musicKey: string | null;
+  /** Per-sound music volume (the fade-in target), not the master gain. */
   volume: number;
+  /** Master gain applied to music AND every SFX. 0 while muted. */
+  masterVolume: number;
+  muted: boolean;
   requested: boolean;
   startedAtMs: number | null;
   fadeInMs: number;

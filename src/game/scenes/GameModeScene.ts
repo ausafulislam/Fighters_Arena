@@ -1,31 +1,34 @@
 import Phaser from 'phaser';
 
-import { DEFAULT_MODE_INDEX, GAME_MODES, MODE_CONFIG } from '@/constants/gameModes';
+import {
+  DEFAULT_MODE_INDEX,
+  GAME_MODES,
+  MODE_CONFIG,
+  MODE_DEPTH,
+  MODE_LAYOUT,
+} from '@/constants/gameModes';
 import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
 import { configureSceneCamera } from '@/utils/camera';
+import { CourtyardStage } from '@/game/ui/CourtyardStage';
 import { GameModeCard } from '@/game/ui/GameModeCard';
+import { GameHud } from '@/game/ui/GameHud';
 import { ModeHeader } from '@/game/ui/ModeHeader';
 import { ModeInfoBar } from '@/game/ui/ModeInfoBar';
-import { ModeNav } from '@/game/ui/ModeNav';
-import { ModeStage } from '@/game/ui/ModeStage';
 import type { GameModeSceneData, GameModeSnapshot } from '@/types/gameModes';
 
 /**
- * Phase 4 Game Mode Selection screen.
- *
- * Composition lives in ModeStage / ModeHeader / ModeNav / ModeInfoBar and four
- * GameModeCard instances. Selection is purely visual: no mode, character or
- * arena screen is started. Only the Back button navigates, back to Welcome.
- * The game-level AudioManager is untouched, so the theme never restarts.
+ * Phase 4 Game Mode Selection screen, extended in Phase 5 with the forward
+ * navigation step: choosing a mode now leads to Character Selection. The
+ * Back button returns to Welcome. Cards are still purely visual - no game
+ * mode, arena or combat system is started.
  *
  * Keyboard input deduplicates by the native event timeStamp: Phaser can
- * re-emit a queued DOM keydown more than once when the frame loop is slow,
- * which would otherwise skip a card.
+ * re-emit a queued DOM keydown more than once when the frame loop is slow.
  */
 export class GameModeScene extends Phaser.Scene {
-  private stage!: ModeStage;
-  private nav!: ModeNav;
+  private stage!: CourtyardStage;
+  private hud!: GameHud;
   private infoBar!: ModeInfoBar;
   private cards: GameModeCard[] = [];
   private lastKeyStamp = -1;
@@ -55,14 +58,24 @@ export class GameModeScene extends Phaser.Scene {
     configureSceneCamera(this);
     this.cameras.main.setBackgroundColor(BACKGROUND_COLOR);
 
-    this.stage = new ModeStage(this);
+    this.stage = new CourtyardStage(this, {
+      layout: MODE_LAYOUT,
+      depth: MODE_DEPTH,
+      petalCount: MODE_CONFIG.PETAL_COUNT,
+    });
     new ModeHeader(this);
-    this.nav = new ModeNav(this, () => this.goBack());
+    this.hud = new GameHud({
+      scene: this,
+      hud: MODE_LAYOUT.hud,
+      depth: MODE_DEPTH.HUD,
+      back: MODE_LAYOUT.back,
+      onBack: () => this.goBack(),
+    });
     this.infoBar = new ModeInfoBar(this);
 
     GAME_MODES.forEach((config, index) => {
       const card = new GameModeCard(this, config, index, {
-        onSelect: (i) => this.selectMode(i, true),
+        onSelect: (i) => this.confirmMode(i),
         onHover: (i) => {
           this.snapshot.hoveredIndex = i;
           this.publish();
@@ -95,7 +108,7 @@ export class GameModeScene extends Phaser.Scene {
 
   update(time: number, delta: number): void {
     this.stage.update(time, delta);
-    this.nav.update(time);
+    this.hud.update(time);
     for (const card of this.cards) card.update(time);
   }
 
@@ -108,8 +121,7 @@ export class GameModeScene extends Phaser.Scene {
     } else if (code === 'ArrowRight' || code === 'KeyD') {
       this.selectMode(Math.min(GAME_MODES.length - 1, this.snapshot.selectedIndex + 1), false);
     } else if (code === 'Enter' || code === 'Space') {
-      this.cards[this.snapshot.selectedIndex]?.press();
-      this.selectMode(this.snapshot.selectedIndex, true);
+      this.confirmMode(this.snapshot.selectedIndex);
     } else if (code === 'Escape' || code === 'Backspace') {
       this.goBack();
     }
@@ -126,6 +138,14 @@ export class GameModeScene extends Phaser.Scene {
     this.applySelection(index, false);
   }
 
+  /** A card click / Enter picks the mode and moves to Character Selection. */
+  private confirmMode(index: number): void {
+    if (this.transitioning) return;
+    this.cards[index]?.press();
+    this.selectMode(index, true);
+    this.goToCharacterSelect();
+  }
+
   private applySelection(index: number, immediate: boolean): void {
     const config = GAME_MODES[index];
     if (!config) return;
@@ -136,12 +156,29 @@ export class GameModeScene extends Phaser.Scene {
     this.publish();
   }
 
+  private goToCharacterSelect(): void {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    this.hud.setEnabled(false);
+    for (const card of this.cards) card.setEnabled(false);
+    const modeId = GAME_MODES[this.snapshot.selectedIndex]?.id ?? null;
+    this.publish();
+
+    this.cameras.main.fadeOut(280, 16, 16, 20);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.start(SCENE_KEYS.CHARACTER_SELECT, {
+        from: SCENE_KEYS.MODE_SELECT,
+        modeId,
+      });
+    });
+  }
+
   /** Back to the Welcome Screen with a short camera fade; music is untouched. */
   private goBack(): void {
     if (this.transitioning) return;
     this.transitioning = true;
     this.snapshot.backCount += 1;
-    this.nav.setEnabled(false);
+    this.hud.setEnabled(false);
     for (const card of this.cards) card.setEnabled(false);
     this.publish();
 

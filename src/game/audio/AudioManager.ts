@@ -6,15 +6,19 @@ import { easeOutQuad } from '@/utils/math';
 
 import { AUDIO_CONFIG } from './audioKeys';
 import { AudioUnlock } from './AudioUnlock';
+import { loadAudioPreference, saveAudioPreference } from './audioPreferences';
 
-type SoundManager = Phaser.Sound.BaseSoundManager;
+/** Concrete game sound manager union - has the master `setVolume` gain. */
+type SoundManager = Phaser.Game['sound'];
 type PlayableSound =
   Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound | Phaser.Sound.NoAudioSound;
 
 /**
- * Game-level (not scene-level) audio service. Music lives here so it survives
- * scene transitions, never restarts on screen updates, and can be extended with
- * SFX / combat audio in later phases without touching the loading screen.
+ * The SINGLE game-level audio service. Every screen talks to this instance:
+ * music lives here so it survives scene transitions without restarting, the
+ * master gain mutes music and all SFX at once, and the preference is restored
+ * from localStorage on boot. No scene ever creates its own sound manager or a
+ * second copy of the theme.
  */
 export class AudioManager {
   private static instance: AudioManager | null = null;
@@ -38,13 +42,16 @@ export class AudioManager {
   private startedAtMs: number | null = null;
   private fadeInMs: number = AUDIO_CONFIG.MUSIC_FADE_IN_MS;
   private currentVolume = 0;
+  private masterVolume: number = AUDIO_CONFIG.MASTER_VOLUME;
+  private muted = false;
 
   /** Attach once, as early as the boot scene allows. */
   attach(game: Phaser.Game): void {
     if (this.game) return;
     this.game = game;
     this.sound = game.sound;
-    game.sound.setVolume(AUDIO_CONFIG.MASTER_VOLUME);
+    this.muted = loadAudioPreference();
+    this.applyMaster();
 
     this.unlockWatcher = new AudioUnlock(() => void this.tryUnlock());
     this.sound.on(Phaser.Sound.Events.UNLOCKED, this.onPhaserUnlocked);
@@ -66,6 +73,11 @@ export class AudioManager {
 
   private get locked(): boolean {
     return this.sound?.locked ?? false;
+  }
+
+  /** The master gain controls music AND every SFX; 0 while muted. */
+  private applyMaster(): void {
+    this.sound?.setVolume(this.muted ? 0 : this.masterVolume);
   }
 
   /** Resume the context on the first valid interaction; start pending music. */
@@ -198,15 +210,36 @@ export class AudioManager {
     this.publish();
   }
 
+  /** Stores the un-muted gain; a muted game stays at master gain 0. */
   setMasterVolume(value: number): void {
-    this.game?.sound.setVolume(Math.max(0, Math.min(1, value)));
+    this.masterVolume = Math.max(0, Math.min(1, value));
+    this.applyMaster();
     this.publish();
+  }
+
+  get isMuted(): boolean {
+    return this.muted;
+  }
+
+  /** Persist and apply immediately. Music keeps playing - it is never restarted. */
+  setMuted(value: boolean): boolean {
+    const next = Boolean(value);
+    if (next !== this.muted) {
+      this.muted = saveAudioPreference(next);
+      this.applyMaster();
+    }
+    this.publish();
+    return this.muted;
+  }
+
+  toggleMuted(): boolean {
+    return this.setMuted(!this.muted);
   }
 
   /** Extension point for menu, UI and combat sounds in later phases. */
   playSfx(key: string, volume: number = AUDIO_CONFIG.SFX_VOLUME): void {
-    if (!this.game || !this.sound || !this.game.cache.audio.exists(key)) return;
-    const sfx = this.sound.add(key, { loop: false, volume });
+    if (this.muted || !this.game || !this.sound || !this.game.cache.audio.exists(key)) return;
+    const sfx = this.sound.add(key, { loop: false, volume: volume * this.masterVolume });
     sfx.play();
     sfx.once(Phaser.Sound.Events.COMPLETE, () => sfx.destroy());
   }
@@ -219,6 +252,8 @@ export class AudioManager {
       musicState: this.state,
       musicKey: this.musicKey,
       volume: this.currentVolume,
+      masterVolume: this.muted ? 0 : this.masterVolume,
+      muted: this.muted,
       requested: this.requested,
       startedAtMs: this.startedAtMs,
       fadeInMs: this.fadeInMs,
@@ -226,7 +261,11 @@ export class AudioManager {
   }
 
   private publish(): void {
-    this.game?.registry.set(REGISTRY_KEYS.AUDIO_STATE, this.getSnapshot());
+    if (!this.game) return;
+    const snapshot = this.getSnapshot();
+    this.game.registry.set(REGISTRY_KEYS.AUDIO_STATE, snapshot);
+    this.game.events.emit(GAME_EVENTS.AUDIO_CHANGED, snapshot);
+    window.dispatchEvent(new CustomEvent('fighters-arena:audio-changed'));
   }
 
   /** Only used when the whole game is torn down; music normally persists. */
@@ -239,6 +278,10 @@ export class AudioManager {
     this.music?.destroy();
     this.unlockWatcher = null;
     this.unlockListenerAttached = false;
+    this.game = null;
+    this.sound = null;
+    this.music = null;
+    this.requested = false;
     AudioManager.instance = null;
   }
 }

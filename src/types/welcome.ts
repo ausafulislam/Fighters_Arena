@@ -1,7 +1,7 @@
 import type { UiIcon } from '@/utils/icons';
 
 export type MenuAction = 'play' | 'settings' | 'leaderboard' | 'about' | 'quit';
-export type PopupKind = 'about' | 'settings';
+export type PopupKind = 'about' | 'settings' | 'quit';
 export type PopupCloseReason = 'button' | 'outside' | 'escape';
 export type TouchControlSize = 'small' | 'medium' | 'large';
 export type ButtonVariant = 'primary' | 'dark' | 'compact';

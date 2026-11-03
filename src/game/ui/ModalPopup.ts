@@ -25,6 +25,8 @@ export interface ModalPopupOptions {
 export abstract class ModalPopup {
   protected readonly scene: Phaser.Scene;
   protected readonly panel: Phaser.GameObjects.Container;
+  /** Content lives in its own child container so a popup can rebuild it. */
+  protected readonly content: Phaser.GameObjects.Container;
   protected readonly width: number;
   protected readonly height: number;
 
@@ -48,6 +50,7 @@ export abstract class ModalPopup {
       .setDepth(WELCOME_DEPTH.POPUP)
       .setAlpha(0)
       .setScale(0.9);
+    this.content = scene.add.container(0, 0);
 
     const frame = scene.add.graphics();
     this.drawFrame(frame);
@@ -71,8 +74,10 @@ export abstract class ModalPopup {
     drawDiamond(accents, -this.width / 2 + 24, -this.height / 2 + 37, 3, PALETTE_HEX.gold);
     drawDiamond(accents, this.width / 2 - 24, -this.height / 2 + 37, 3, PALETTE_HEX.gold);
     this.panel.add(accents);
+    // Added last so popup content always renders above the shared frame.
+    this.panel.add(this.content);
 
-    this.buildContent(this.panel);
+    this.buildContent(this.content);
 
     // The dim is intentionally NOT interactive: a scene-level pointer listener
     // with a panel-bounds guard handles outside clicks, so popup controls are

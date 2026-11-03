@@ -8,6 +8,8 @@ export const ASSET_ROOT = 'assets';
 export const ASSET_PATHS = {
   characters: `${ASSET_ROOT}/characters`,
   spriteSheets: `${ASSET_ROOT}/characters/spritesheets`,
+  characterCards: `${ASSET_ROOT}/characters/cards`,
+  characterShowcase: `${ASSET_ROOT}/characters/showcase`,
   animations: `${ASSET_ROOT}/characters/animations`,
   arenas: `${ASSET_ROOT}/arenas`,
   backgrounds: `${ASSET_ROOT}/arenas/backgrounds`,
@@ -43,6 +45,7 @@ export const TEXTURE_KEYS = {
   CARD_TOURNAMENT: 'card-tournament',
   CARD_VERSUS: 'card-versus',
   CARD_SURVIVAL: 'card-survival',
+  RANDOM_SILHOUETTE: 'character-random-silhouette',
 } as const;
 
 export const ANIMATION_KEYS = {
@@ -75,6 +78,19 @@ export const ASSET_URLS = {
   themeOgg: assetUrl(`${ASSET_PATHS.music}/theme_main.ogg`),
   themeMp3: assetUrl(`${ASSET_PATHS.music}/theme_main.mp3`),
 } as const;
+
+/** Character roster texture keys and URLs are derived from the data ids. */
+export const characterCardTextureKey = (id: string): string => `character-card-${id}`;
+export const characterShowcaseTextureKey = (id: string): string => `character-show-${id}`;
+
+export const characterCardUrl = (id: string): string =>
+  assetUrl(`${ASSET_PATHS.characterCards}/card_${id}.png`);
+
+export const characterShowcaseUrl = (id: string): string =>
+  assetUrl(`${ASSET_PATHS.characterShowcase}/show_${id}.png`);
+
+export const randomSilhouetteUrl = (): string =>
+  assetUrl(`${ASSET_PATHS.characters}/random_silhouette.png`);
 
 /** The loading screen spritesheet frames are authored at 16 x 24 pixels. */
 export const FLAME_FRAME = { width: 16, height: 24, count: 4 } as const;

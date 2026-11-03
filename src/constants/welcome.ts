@@ -1,6 +1,6 @@
 import { GAME_HEIGHT, GAME_WIDTH } from './game';
+import type { HudLayout } from '@/constants/hud';
 import type { MenuItemConfig } from '@/types/welcome';
-import type { UiIcon } from '@/utils/icons';
 
 const W = GAME_WIDTH;
 const H = GAME_HEIGHT;
@@ -25,10 +25,10 @@ export const WELCOME_LAYOUT = {
     width: 30,
     height: 28,
     icons: [
-      { x: 566, icon: 'volume-2' as UiIcon },
-      { x: 610, icon: 'maximize' as UiIcon },
+      { x: 566, kind: 'volume' as const },
+      { x: 610, kind: 'fullscreen' as const },
     ],
-  },
+  } as const satisfies HudLayout,
   tagline: { x: W / 2, y: 341, width: 164, height: 22 },
 } as const;
 
@@ -106,6 +106,12 @@ export const MENU_ITEMS: readonly MenuItemConfig[] = [
 
 export const WELCOME_TEXT = {
   tagline: 'FIGHT. WIN. BE LEGEND.',
+  quitTitle: 'QUIT GAME',
+  quitMessage: 'ARE YOU SURE YOU WANT TO QUIT?',
+  quitFallback:
+    "YOUR BROWSER BLOCKED AUTOMATIC CLOSING. PLEASE CLOSE THIS TAB MANUALLY TO EXIT FIGHTER'S ARENA.",
+  yes: 'YES',
+  cancel: 'CANCEL',
   aboutTitle: "ABOUT FIGHTER'S ARENA",
   aboutDescription:
     "FIGHTER'S ARENA is a 2D arcade-style fighting game where powerful warriors compete in intense battles. Choose your fighter, master your skills, and become the ultimate arena champion.",
@@ -118,4 +124,5 @@ export const WELCOME_TEXT = {
 export const POPUP_LAYOUT = {
   about: { width: 400, height: 236 },
   settings: { width: 360, height: 226 },
+  quit: { width: 320, height: 168 },
 } as const;

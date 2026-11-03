@@ -2,13 +2,14 @@ import Phaser from 'phaser';
 
 import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
-import { WELCOME_CONFIG } from '@/constants/welcome';
+import { WELCOME_CONFIG, WELCOME_DEPTH, WELCOME_LAYOUT } from '@/constants/welcome';
 import { loadMobileSettings } from '@/game/settings/mobileSettings';
 import { configureSceneCamera } from '@/utils/camera';
-import { CornerHud } from '@/game/ui/CornerHud';
 import { AboutPopup } from '@/game/ui/AboutPopup';
+import { GameHud } from '@/game/ui/GameHud';
 import { MenuPanel } from '@/game/ui/MenuPanel';
 import type { ModalPopup } from '@/game/ui/ModalPopup';
+import { QuitPopup } from '@/game/ui/QuitPopup';
 import { SettingsPopup } from '@/game/ui/SettingsPopup';
 import { WelcomeStage } from '@/game/ui/WelcomeStage';
 import type {
@@ -23,10 +24,11 @@ import type {
  * Phase 3 Welcome Screen / Main Menu.
  *
  * The scene owns composition and the action contract; visuals live in
- * WelcomeStage / MenuPanel / CornerHud and both popups share ModalPopup.
- * PLAY, LEADERBOARD and QUIT deliberately have no behaviour beyond their
- * button feedback. The game-level AudioManager is untouched, so the theme
- * started during loading continues across the transition without restarting.
+ * WelcomeStage / MenuPanel / GameHud and the popups share ModalPopup.
+ * PLAY navigates to Game Mode Selection, QUIT opens a real confirmation popup
+ * with a verified browser-close fallback, SETTINGS/ABOUT open their popups and
+ * LEADERBOARD stays display-only. Audio/fullscreen are handled by the shared
+ * GameHud and game-level managers, so music never restarts on a transition.
  */
 export class WelcomeScene extends Phaser.Scene {
   private stage!: WelcomeStage;
@@ -60,7 +62,11 @@ export class WelcomeScene extends Phaser.Scene {
     configureSceneCamera(this);
     this.cameras.main.setBackgroundColor(BACKGROUND_COLOR);
     this.stage = new WelcomeStage(this);
-    new CornerHud(this);
+    new GameHud({
+      scene: this,
+      hud: WELCOME_LAYOUT.cornerHud,
+      depth: WELCOME_DEPTH.CORNER_HUD,
+    });
     this.menu = new MenuPanel(this, {
       onAction: (action) => this.handleAction(action),
       onInteraction: () => this.syncMenuState(),
@@ -81,12 +87,12 @@ export class WelcomeScene extends Phaser.Scene {
     if (this.transitioning) return;
     this.snapshot.pressCounts[action] += 1;
     if (action === 'play') {
-      // Phase 4: PLAY is the one real navigation path - to Game Mode Selection.
+      // PLAY is the real navigation path - to Game Mode Selection.
       this.goToModeSelect();
-    } else if (action === 'about' || action === 'settings') {
+    } else if (action === 'about' || action === 'settings' || action === 'quit') {
       this.openPopup(action);
     } else {
-      // LEADERBOARD and QUIT stay display-only with press feedback.
+      // LEADERBOARD stays display-only with press feedback.
       this.menu.pressAction(action);
     }
     this.publish();
@@ -118,8 +124,9 @@ export class WelcomeScene extends Phaser.Scene {
       this.publish();
     };
 
-    this.popup =
-      kind === 'about' ? new AboutPopup(this, onDismiss) : new SettingsPopup(this, onDismiss);
+    if (kind === 'about') this.popup = new AboutPopup(this, onDismiss);
+    else if (kind === 'settings') this.popup = new SettingsPopup(this, onDismiss);
+    else this.popup = new QuitPopup(this, onDismiss);
     this.publish();
   }
 

@@ -1,6 +1,14 @@
 import Phaser from 'phaser';
 
-import { ASSET_URLS, FLAME_FRAME, TEXTURE_KEYS } from '@/constants/assets';
+import {
+  ASSET_URLS,
+  FLAME_FRAME,
+  TEXTURE_KEYS,
+  characterCardUrl,
+  characterShowcaseUrl,
+  randomSilhouetteUrl,
+} from '@/constants/assets';
+import { CHARACTERS } from '@/constants/characters';
 import { LOADING_CONFIG } from '@/constants/loading';
 import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
@@ -87,34 +95,51 @@ export class LoadingScene extends Phaser.Scene {
     loader.once(Phaser.Loader.Events.COMPLETE, this.onLoadComplete, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.removeLoaderListeners, this);
 
-    loader.image(TEXTURE_KEYS.ARENA_NIGHT, ASSET_URLS.arenaNight);
-    loader.image(TEXTURE_KEYS.CLOUD_BANK, ASSET_URLS.cloudBank);
-    loader.image(TEXTURE_KEYS.GLOW, ASSET_URLS.glow);
-    loader.image(TEXTURE_KEYS.KENJI, ASSET_URLS.kenji);
-    loader.image(TEXTURE_KEYS.SHADOW, ASSET_URLS.shadow);
-    loader.image(TEXTURE_KEYS.LOGO, ASSET_URLS.logo);
-    loader.image(TEXTURE_KEYS.PETAL, ASSET_URLS.petal);
-    loader.image(TEXTURE_KEYS.EMBER, ASSET_URLS.ember);
-    loader.spritesheet(TEXTURE_KEYS.FLAMES_WARM, ASSET_URLS.flamesWarm, {
-      frameWidth: FLAME_FRAME.width,
-      frameHeight: FLAME_FRAME.height,
-    });
-    loader.spritesheet(TEXTURE_KEYS.FLAMES_VIOLET, ASSET_URLS.flamesViolet, {
-      frameWidth: FLAME_FRAME.width,
-      frameHeight: FLAME_FRAME.height,
-    });
+    // Queue helpers keep the honest "loaded / total" counter in lockstep with
+    // the real loader queue - no hard-coded totals to drift when art is added.
+    let queued = 0;
+    const image = (key: string, url: string): void => {
+      loader.image(key, url);
+      queued += 1;
+    };
+    const sheet = (key: string, url: string): void => {
+      loader.spritesheet(key, url, {
+        frameWidth: FLAME_FRAME.width,
+        frameHeight: FLAME_FRAME.height,
+      });
+      queued += 1;
+    };
+
+    image(TEXTURE_KEYS.ARENA_NIGHT, ASSET_URLS.arenaNight);
+    image(TEXTURE_KEYS.CLOUD_BANK, ASSET_URLS.cloudBank);
+    image(TEXTURE_KEYS.GLOW, ASSET_URLS.glow);
+    image(TEXTURE_KEYS.KENJI, ASSET_URLS.kenji);
+    image(TEXTURE_KEYS.SHADOW, ASSET_URLS.shadow);
+    image(TEXTURE_KEYS.LOGO, ASSET_URLS.logo);
+    image(TEXTURE_KEYS.PETAL, ASSET_URLS.petal);
+    image(TEXTURE_KEYS.EMBER, ASSET_URLS.ember);
+    sheet(TEXTURE_KEYS.FLAMES_WARM, ASSET_URLS.flamesWarm);
+    sheet(TEXTURE_KEYS.FLAMES_VIOLET, ASSET_URLS.flamesViolet);
     // Phase 3 / 4 screen assets are preloaded here too, so every later screen
     // appears immediately at 100% with no second loading phase or blank flash.
-    loader.image(TEXTURE_KEYS.WELCOME_COURTYARD, ASSET_URLS.welcomeCourtyard);
-    loader.image(TEXTURE_KEYS.CARD_BATTLE, ASSET_URLS.cardBattle);
-    loader.image(TEXTURE_KEYS.CARD_TOURNAMENT, ASSET_URLS.cardTournament);
-    loader.image(TEXTURE_KEYS.CARD_VERSUS, ASSET_URLS.cardVersus);
-    loader.image(TEXTURE_KEYS.CARD_SURVIVAL, ASSET_URLS.cardSurvival);
-    // Lucide SVG icons replace the old low-resolution raster icon sheet.
-    loadUiIcons(loader);
+    image(TEXTURE_KEYS.WELCOME_COURTYARD, ASSET_URLS.welcomeCourtyard);
+    image(TEXTURE_KEYS.CARD_BATTLE, ASSET_URLS.cardBattle);
+    image(TEXTURE_KEYS.CARD_TOURNAMENT, ASSET_URLS.cardTournament);
+    image(TEXTURE_KEYS.CARD_VERSUS, ASSET_URLS.cardVersus);
+    image(TEXTURE_KEYS.CARD_SURVIVAL, ASSET_URLS.cardSurvival);
 
-    // 11 Phase 2 files + courtyard + 4 card plates + 12 Lucide SVGs.
-    this.totalFiles = 27;
+    // Phase 5: seven card plates, seven full-body showcases and the mystery
+    // silhouette - every character appears instantly when the screen opens.
+    for (const config of CHARACTERS) {
+      image(config.cardTextureKey, characterCardUrl(config.id));
+      image(config.showcaseTextureKey, characterShowcaseUrl(config.id));
+    }
+    image(TEXTURE_KEYS.RANDOM_SILHOUETTE, randomSilhouetteUrl());
+
+    // Lucide SVG icons replace the old low-resolution raster icon sheet.
+    queued += loadUiIcons(loader);
+
+    this.totalFiles = queued;
     this.publish();
   }
 

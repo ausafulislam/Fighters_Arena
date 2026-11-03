@@ -1,8 +1,8 @@
 import { TEXTURE_KEYS } from '@/constants/assets';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/constants/game';
 import { PALETTE_HEX } from '@/constants/palette';
+import type { HudLayout } from '@/constants/hud';
 import type { GameModeConfig } from '@/types/gameModes';
-import type { UiIcon } from '@/utils/icons';
 
 const W = GAME_WIDTH;
 const H = GAME_HEIGHT;
@@ -31,10 +31,10 @@ export const MODE_LAYOUT = {
     width: 30,
     height: 28,
     icons: [
-      { x: 566, icon: 'volume-2' as UiIcon },
-      { x: 610, icon: 'maximize' as UiIcon },
+      { x: 566, kind: 'volume' as const },
+      { x: 610, kind: 'fullscreen' as const },
     ],
-  },
+  } as const satisfies HudLayout,
   cards: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,

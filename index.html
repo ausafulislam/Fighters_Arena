@@ -49,44 +49,93 @@
       crossorigin
     />
     <title>FIGHTER'S ARENA</title>
+    <script>
+      // Seed the real viewport orientation before any CSS/JS screen paints.
+      // OrientationManager takes over with resize/orientationchange listeners.
+      document.documentElement.dataset.faOrientation =
+        window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+    </script>
   </head>
   <body>
     <main id="game-root" aria-label="FIGHTER'S ARENA game viewport"></main>
 
-    <!-- Orientation guard: replaces the game viewport in portrait. -->
+    <!-- Landscape-only guard: replaces the game viewport in portrait. -->
     <div id="rotate-notice" role="status" aria-live="polite">
-      <svg class="rotate-icon" viewBox="0 0 80 80" aria-hidden="true" focusable="false">
-        <rect
-          x="26"
-          y="10"
-          width="34"
-          height="56"
-          rx="5"
-          fill="none"
-          stroke="#FFC247"
-          stroke-width="3"
-        />
-        <line
-          x1="37"
-          y1="16"
-          x2="49"
-          y2="16"
-          stroke="#FFC247"
-          stroke-width="3"
-          stroke-linecap="round"
-        />
-        <circle cx="43" cy="60" r="2.5" fill="#FF5A00" />
-        <path
-          d="M12 46 A30 30 0 0 1 42 18"
-          fill="none"
-          stroke="#FF5A00"
-          stroke-width="3.5"
-          stroke-linecap="round"
-        />
-        <path d="M8 39 L12 47 L20 44 Z" fill="#FF5A00" />
-      </svg>
-      <p class="rotate-title">ROTATE YOUR DEVICE</p>
-      <p class="rotate-subtitle">FIGHTER'S ARENA is built for landscape play.</p>
+      <div class="rotate-glow rotate-glow--orange" aria-hidden="true"></div>
+      <div class="rotate-glow rotate-glow--purple" aria-hidden="true"></div>
+
+      <div class="rotate-visual" aria-hidden="true">
+        <div class="rotate-halo"></div>
+        <svg class="rotate-arrow" viewBox="0 0 200 200" focusable="false">
+          <path
+            d="M 26 142 A 82 82 0 0 1 34 52"
+            fill="none"
+            stroke="#FF5A00"
+            stroke-width="6"
+            stroke-linecap="round"
+          />
+          <path d="M 20 42 L 35 50 L 41 35 Z" fill="#FFC247" />
+        </svg>
+        <svg class="rotate-phone" viewBox="0 0 120 200" focusable="false">
+          <defs>
+            <linearGradient id="fa-screen" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2B1450" />
+              <stop offset="0.6" stop-color="#1B1030" />
+              <stop offset="1" stop-color="#40133A" />
+            </linearGradient>
+          </defs>
+          <!-- Device body, bezel, side buttons -->
+          <rect
+            x="10"
+            y="6"
+            width="100"
+            height="188"
+            rx="17"
+            fill="#0B0A12"
+            stroke="#FFC247"
+            stroke-width="3"
+          />
+          <rect
+            x="15"
+            y="11"
+            width="90"
+            height="178"
+            rx="13"
+            fill="#171426"
+            stroke="#FF5A00"
+            stroke-width="1.5"
+          />
+          <rect x="16" y="60" width="3" height="20" rx="1.5" fill="#FFC247" />
+          <rect x="16" y="86" width="3" height="20" rx="1.5" fill="#FFC247" />
+          <!-- Screen: moonlit courtyard miniature -->
+          <rect x="21" y="20" width="78" height="158" rx="8" fill="url(#fa-screen)" />
+          <circle cx="60" cy="56" r="15" fill="#FFE6B4" opacity="0.92" />
+          <path d="M 46 56 L 54 44 L 60 38 L 66 44 L 74 56 Z" fill="#2B1450" opacity="0.85" />
+          <rect x="52" y="54" width="16" height="9" fill="#2B1450" opacity="0.85" />
+          <path d="M 21 118 L 99 118" stroke="#8B2BE2" stroke-width="2" opacity="0.7" />
+          <rect x="21" y="118" width="78" height="60" fill="#231336" opacity="0.75" />
+          <path
+            d="M 21 140 L 99 140 M 21 158 L 99 158 M 45 118 L 45 178 M 75 118 L 75 178"
+            stroke="#6C3A8C"
+            stroke-width="1.4"
+            opacity="0.7"
+          />
+          <rect x="30" y="96" width="8" height="15" rx="2" fill="#FFB34D" opacity="0.9" />
+          <rect x="82" y="96" width="8" height="15" rx="2" fill="#FFB34D" opacity="0.9" />
+          <!-- Two fighter markers -->
+          <rect x="36" y="104" width="8" height="14" rx="3" fill="#FF5A00" />
+          <rect x="76" y="104" width="8" height="14" rx="3" fill="#B36BFF" />
+          <!-- Notch and home indicator -->
+          <rect x="48" y="14" width="24" height="5" rx="2.5" fill="#0B0A12" />
+          <rect x="46" y="183" width="28" height="3" rx="1.5" fill="#FFC247" opacity="0.85" />
+        </svg>
+      </div>
+
+      <h1 class="rotate-title">ROTATE YOUR DEVICE</h1>
+      <p class="rotate-subtitle">
+        PLEASE ROTATE YOUR PHONE TO LANDSCAPE MODE TO PLAY FIGHTER'S ARENA.
+      </p>
+      <div class="rotate-rule" aria-hidden="true"><span></span></div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>
