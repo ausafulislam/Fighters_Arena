@@ -4,12 +4,20 @@ import {
   ASSET_URLS,
   FLAME_FRAME,
   TEXTURE_KEYS,
+  arenaBackgroundUrl,
+  arenaCardUrl,
   characterCardUrl,
   characterShowcaseUrl,
+  fighterSheetTextureKey,
+  fighterSheetUrl,
   randomSilhouetteUrl,
+  sfxUrl,
 } from '@/constants/assets';
+import { ARENAS } from '@/constants/arenas';
 import { CHARACTERS } from '@/constants/characters';
+import { FIGHTER_FRAME } from '@/constants/fighterFrames';
 import { LOADING_CONFIG } from '@/constants/loading';
+import { SFX_FILES } from '@/game/audio/audioKeys';
 import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
 import { AUDIO_CONFIG, MUSIC_KEYS } from '@/game/audio/audioKeys';
@@ -109,6 +117,17 @@ export class LoadingScene extends Phaser.Scene {
       });
       queued += 1;
     };
+    const fighterSheet = (key: string, url: string): void => {
+      loader.spritesheet(key, url, {
+        frameWidth: FIGHTER_FRAME.width,
+        frameHeight: FIGHTER_FRAME.height,
+      });
+      queued += 1;
+    };
+    const sfx = (key: string, url: string): void => {
+      loader.audio(key, url);
+      queued += 1;
+    };
 
     image(TEXTURE_KEYS.ARENA_NIGHT, ASSET_URLS.arenaNight);
     image(TEXTURE_KEYS.CLOUD_BANK, ASSET_URLS.cloudBank);
@@ -135,6 +154,18 @@ export class LoadingScene extends Phaser.Scene {
       image(config.showcaseTextureKey, characterShowcaseUrl(config.id));
     }
     image(TEXTURE_KEYS.RANDOM_SILHOUETTE, randomSilhouetteUrl());
+
+    // Phase 6: five arena backdrops + card plates, seven frame-based fighter
+    // sheets and sixteen original SFX. All are ready before the menu appears,
+    // so no later screen ever flashes a missing texture.
+    for (const arena of ARENAS) {
+      image(arena.backgroundTextureKey, arenaBackgroundUrl(arena.id));
+      image(arena.cardTextureKey, arenaCardUrl(arena.id));
+    }
+    for (const character of CHARACTERS) {
+      fighterSheet(fighterSheetTextureKey(character.id), fighterSheetUrl(character.id));
+    }
+    for (const effect of SFX_FILES) sfx(effect.key, sfxUrl(effect.name));
 
     // Lucide SVG icons replace the old low-resolution raster icon sheet.
     queued += loadUiIcons(loader);

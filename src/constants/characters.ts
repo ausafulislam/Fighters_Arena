@@ -171,6 +171,7 @@ export const CHARACTER_LAYOUT = {
     labelY: 272,
   },
   info: { x: W / 2, y: 334, width: 300, height: 22, cut: 10 },
+  continueBtn: { x: 552, y: 310, width: 122, height: 24 },
 } as const;
 
 export const CHARACTER_DEPTH = {

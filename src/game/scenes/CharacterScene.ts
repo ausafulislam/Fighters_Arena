@@ -13,6 +13,10 @@ import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
 import { CharacterSelection } from '@/game/characters/CharacterSelection';
 import type { SelectionChange } from '@/game/characters/CharacterSelection';
+import { MatchSetup } from '@/game/match/MatchSetup';
+import { playSfx } from '@/game/audio/Sfx';
+import { SFX } from '@/game/audio/audioKeys';
+import { ArcadeButton } from '@/game/ui/ArcadeButton';
 import { CharacterCard } from '@/game/ui/CharacterCard';
 import { CharacterHeader } from '@/game/ui/CharacterHeader';
 import { CharacterInfoBar } from '@/game/ui/CharacterInfoBar';
@@ -34,6 +38,7 @@ export class CharacterScene extends Phaser.Scene {
   private infoBar!: CharacterInfoBar;
   private showcase!: CharacterShowcase;
   private randomOption!: RandomOption;
+  private continueButton!: ArcadeButton;
   private cards: CharacterCard[] = [];
   private unsubscribe: (() => void) | null = null;
   private lastKeyStamp = -1;
@@ -48,6 +53,7 @@ export class CharacterScene extends Phaser.Scene {
     this.cards = [];
     this.lastKeyStamp = -1;
     this.transitioning = false;
+    MatchSetup.getInstance().setMode(data?.modeId ?? null);
     this.snapshot = {
       sceneKey: SCENE_KEYS.CHARACTER_SELECT,
       selectedId: 'kenji',
@@ -63,6 +69,7 @@ export class CharacterScene extends Phaser.Scene {
       hoveredIndex: null,
       artwork: { x: 0, y: 0, width: 0, height: 0 },
       backCount: 0,
+      continueCount: 0,
       transitionedFrom: data?.from ?? null,
       modeId: data?.modeId ?? null,
     };
@@ -93,6 +100,20 @@ export class CharacterScene extends Phaser.Scene {
     this.infoBar = new CharacterInfoBar(this);
     this.showcase = new CharacterShowcase(this, initial);
     this.randomOption = new RandomOption(this, () => manager.selectRandom());
+    // Phase 6 forward navigation. CONTINUE is functional because the flow now
+    // requires Character Selection -> Arena Selection.
+    const B = CHARACTER_LAYOUT.continueBtn;
+    this.continueButton = new ArcadeButton(this, {
+      x: B.x,
+      y: B.y,
+      width: B.width,
+      height: B.height,
+      label: 'CONTINUE',
+      variant: 'primary',
+      icon: 'check',
+      fontSize: 11,
+      onSelect: () => this.goToArenaSelect(),
+    });
 
     const C = CHARACTER_LAYOUT.cards;
     const positions: { x: number; y: number }[] = [
@@ -202,7 +223,9 @@ export class CharacterScene extends Phaser.Scene {
       manager.selectIndex(current >= 4 ? current - 4 : current, 'keyboard');
     } else if (code === 'ArrowDown' || code === 'KeyS') {
       manager.selectIndex(current <= 2 ? current + 4 : current, 'keyboard');
-    } else if (code === 'Enter' || code === 'Space') {
+    } else if (code === 'Enter') {
+      this.goToArenaSelect();
+    } else if (code === 'Space') {
       this.cards[current]?.press();
       manager.selectIndex(current, 'card');
     }
@@ -218,12 +241,30 @@ export class CharacterScene extends Phaser.Scene {
     this.unsubscribe = null;
   };
 
+  /** Forward into Phase 6 Arena Selection; the flow state keeps the pick. */
+  private goToArenaSelect(): void {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    this.snapshot.continueCount += 1;
+    this.hud.setEnabled(false);
+    this.continueButton.setEnabled(false);
+    for (const card of this.cards) card.setEnabled(false);
+    this.randomOption.setEnabled(false);
+    playSfx(SFX.UI_CONFIRM);
+    this.publish();
+    this.cameras.main.fadeOut(CHARACTER_CONFIG.FADE_OUT_MS, 16, 16, 20);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.start(SCENE_KEYS.ARENA_SELECT, { from: SCENE_KEYS.CHARACTER_SELECT });
+    });
+  }
+
   /** Back to Game Mode Selection with a short camera fade; music is untouched. */
   private goBack(): void {
     if (this.transitioning) return;
     this.transitioning = true;
     this.snapshot.backCount += 1;
     this.hud.setEnabled(false);
+    this.continueButton.setEnabled(false);
     for (const card of this.cards) card.setEnabled(false);
     this.randomOption.setEnabled(false);
     this.publish();

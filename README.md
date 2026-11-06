@@ -1,182 +1,164 @@
 # FIGHTER'S ARENA
 
-**Phase 5 — Character Selection + existing bug fixes**
+**Phase 6 — Arena Selection through playable fighting gameplay**
 
-A browser-based, 2D side-view fighting game built around **Modern HD Pixel Art**, developed one phase at a time.
+A browser-based, 2D side-view arcade fighting game built around **Modern HD Pixel Art**, developed one phase at a time with Phaser 3, TypeScript and Vite.
 
-> **Current scope:** the loading screen, the Welcome Screen / Main Menu (About, mobile-preparation Settings and QUIT popups), the Game Mode Selection Screen and the **Character Selection Screen**. Mode cards and character cards are visual selection only. There is no arena selection, game mode implementation, fighting mechanics, gameplay, tournament system, multiplayer or survival logic.
->
-> Flow: `Welcome → Game Mode Selection → Character Selection`. The Back button on Character Selection returns to Game Mode Selection. LEADERBOARD remains display-only.
+> **Current scope:** Loading → Welcome / Main Menu → Game Mode Selection → Character Selection → **Arena Selection → Arena Preview → VS Intro → playable match**. All five arenas and all seven fighters are playable. There is no advanced results screen, leaderboard, tournament system, multiplayer implementation or survival mode.
 
 ---
 
 ## Contents
 
-- [What Phase 5 fixed](#what-phase-5-fixed)
-- [Character Selection screen](#character-selection-screen)
-- [Roster and statistics](#roster-and-statistics)
-- [Architecture](#architecture)
+- [Development flow](#development-flow)
+- [Screens](#screens)
+- [Playable match](#playable-match)
+- [Controls](#controls)
+- [Modular architecture](#modular-architecture)
+- [Assets and art pipeline](#assets-and-art-pipeline)
+- [Audio](#audio)
 - [Shared systems](#shared-systems)
+- [Rendering and responsive behaviour](#rendering-and-responsive-behaviour)
 - [Technology stack](#technology-stack)
 - [Getting started](#getting-started)
 - [npm scripts](#npm-scripts)
-- [Typography and icons](#typography-and-icons)
-- [Art pipeline](#art-pipeline)
-- [Rendering and responsive behaviour](#rendering-and-responsive-behaviour)
 - [Verification](#verification)
-- [Phase scope and deferred work](#phase-scope-and-deferred-work)
+- [Known limitations and deferred work](#known-limitations-and-deferred-work)
 
 ---
 
-## What Phase 5 fixed
+## Development flow
 
-Four previously non-functional / incorrect features were rebuilt as real systems rather than visual-only stubs.
+```
+Boot → Loading → Welcome → Game Mode Selection → Character Selection
+     → Arena Selection → Arena Preview → VS Intro → Gameplay
+```
 
-### QUIT
+`MatchSetup`, `CharacterSelection` and `ArenaSelection` are game-level singletons attached once in `src/main.ts`. The selected mode, player, opponent and arena therefore survive every scene transition without being copied into scene data. Back buttons walk the same chain in reverse:
 
-Clicking QUIT now opens a `QuitPopup` (built on the shared `ModalPopup` shell) with the exact message `ARE YOU SURE YOU WANT TO QUIT?` and YES / CANCEL buttons. CANCEL dismisses and returns to the Welcome Screen.
+- Arena Preview → Arena Selection
+- Arena Selection → Character Selection
+- Character Selection → Game Mode Selection
+- Game Mode Selection → Welcome
 
-YES is handled by the game-level `QuitController`. Modern browsers only permit `window.close()` on windows opened by script, so the controller:
+Kenji vs Shadow in Temple Grounds is the default match; any other fighter still faces Shadow, and any locked-in arena is used as the actual gameplay background.
 
-1. calls `window.close()` only in a permitted context (`window.opener` present or an explicit host opt-in),
-2. waits and **verifies** `window.closed` instead of assuming success,
-3. when the tab is still open, replaces the popup content with an honest fallback: `YOUR BROWSER BLOCKED AUTOMATIC CLOSING. PLEASE CLOSE THIS TAB MANUALLY TO EXIT FIGHTER'S ARENA.` plus a CLOSE button.
+## Screens
 
-The player is never left on a blank screen and the game never claims a close that did not happen. Escape / outside-click also dismiss the popup.
+### Arena Selection
 
-### Volume
+`ArenaScene` — `SELECT ARENA` header, five consistent 108 × 146 cut-corner cards (Temple Grounds, Blazing Canyon, Bamboo Forest, Frozen Peak, Skyline Rooftop), real mouse/touch selection, Left/Right arrow buttons, orange selection glow, a dynamic bottom information bar and a working CONFIRM. Default: Temple Grounds. Back returns to Character Selection.
 
-The top-right volume badge is now a real control on every screen, wired to the single `AudioManager` instance:
+### Arena Preview
 
-- click toggles mute; the Lucide icon swaps immediately between `volume-2` (sound on) and `volume-x` (muted),
-- the master gain is set to `0` while muted and restored to `AUDIO_CONFIG.MASTER_VOLUME` when unmuted, so **music and every SFX** are affected,
-- `playSfx()` short-circuits while muted, so no silent sound instances accumulate,
-- the preference is validated and persisted in `localStorage` under `fighters-arena:audio:v1` and restored on the next boot,
-- music is never restarted or duplicated by a mute toggle or a scene change (`startedAtMs` stays fixed, one active sound).
+`ArenaPreviewScene` — `ARENA PREVIEW` header, a large 320 × 180 live preview of the **selected** arena, left summary panel (thumbnail, name, category, description), right `ARENA FEATURES` panel, working PREVIOUS / NEXT, a prominent CONFIRM and the exact `LOCK IN YOUR ARENA` line. Changing the arena updates every panel immediately; the preview texture is set before its alpha cross-fade so rapid clicks can never leave a stale image.
 
-### Fullscreen
+### VS Intro
 
-The top-right badge is wired to the single `FullscreenManager`:
+`VsIntroScene` — selected arena backdrop, player and opponent artwork sliding in from the sides, portraits, names, orange/purple health previews, a cinematic `VS` landing, then `READY` and `FIGHT!`. The sequence is fully automatic (no clicks required) and hands off to Gameplay. All character/arena values come from `MatchSetup`, never hardcoded names.
 
-- requests are made from the real pointer-up gesture, on `document.documentElement` (never the canvas), so the 16:9 CSS stage stays letterboxed and artwork is never stretched,
-- clicking again exits fullscreen (`minimize` icon while active, `maximize` otherwise),
-- `fullscreenchange` / `webkitfullscreenchange` keep the state and icon synchronised with browser-driven exits (Esc, F11),
-- unsupported browsers dim the badge and disable its handler; rejected requests are caught and recorded instead of throwing into the game loop,
-- Phaser's FIT scaling is re-measured after the viewport changes.
+### Gameplay
 
-### Rotate Your Device
+`GameplayScene` — the selected arena is the real fighting background with a scrim, floor line and tinted ambient particles. Both fighters stand on the same ground plane with automatic facing, collision separation and arena bounds.
 
-The CSS-only portrait guard was replaced by a real viewport-driven `OrientationManager` plus a redesigned overlay:
+## Playable match
 
-- orientation is computed from **actual viewport dimensions** (`visualViewport` → `innerWidth/innerHeight`), never from a user agent or device guess;
-- `resize`, `orientationchange`, `visualViewport.resize` and the orientation media query are all observed;
-- portrait shows a centered gaming-style phone illustration with a rotating animation, a curved arrow, orange/purple glows, the heading `ROTATE YOUR DEVICE` and the description `PLEASE ROTATE YOUR PHONE TO LANDSCAPE MODE TO PLAY FIGHTER'S ARENA.`;
-- landscape hides the overlay (`display:none`, `pointer-events:none`) and re-measures FIT scaling;
-- **no scene is ever reloaded** — the DOM attribute changes only, so loading, music and menu state survive rotation;
-- `prefers-reduced-motion` disables the animation and shows the phone already rotated.
+| System         | Implementation                                                                                                                                                                                                                          |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Physics        | Gravity, jump velocity, ground detection, landing squash, frame-rate-independent horizontal drag, arena bounds and two-fighter separation.                                                                                              |
+| Fighter states | `idle`, `walk`, `run`, `jump`, `land`, `crouch`, `block`, four attacks, `hit`, `knockback`, `knockdown`, `getup`, `victory`, `defeat`.                                                                                                  |
+| Attacks        | Light Punch / Heavy Punch / Kick / Special with real **startup → active → recovery** timing in `ATTACKS`. A hitbox exists only during the active window; `CombatSystem` intersects it with the defender's body box. One hit per attack. |
+| Defensive play | Blocking reduces damage, block reaction, knockback, hitstun, knockdown/get-up chain.                                                                                                                                                    |
+| Resources      | Energy gained on dealing/taking hits; Special costs 60 energy and has a cooldown. Combo counter with a 900 ms window.                                                                                                                   |
+| CPU opponent   | State-based `OpponentAI`: `idle / approach / retreat / attack / block / jump / hit / knockdown`. Timed decisions, no attack spam while an attack or cooldown is running.                                                                |
+| HUD            | Portraits, names, orange/purple health bars, round indicators, energy bars, 99-second timer, combo text and a functional pause button — all driven by live match values.                                                                |
+| Rounds         | Best of three, two wins to take the match, time-out decided by remaining health, draws handled without a crash. Short READY / FIGHT between rounds.                                                                                     |
+| Result         | In-flow `VICTORY` / `DEFEAT` / `DRAW` overlay with the winner name, REMATCH and MAIN MENU.                                                                                                                                              |
+| Pause          | `P` or the HUD button pauses movement, AI, timer and combat; RESUME / RESTART MATCH / QUIT TO MAIN MENU all work. An intentional pause is never auto-resumed by a device rotation.                                                      |
 
----
+## Controls
 
-## Character Selection screen
+Keyboard (configured centrally in `src/constants/controls.ts`):
 
-A real interactive screen recreating the reference composition while keeping the established visual identity: the same moonlit Japanese temple courtyard plate, glowing moon, pagodas, cherry blossoms, purple clouds, stone floor, lantern light and drifting petals (shared `CourtyardStage`), darkened slightly so the UI reads clearly.
+| Action                                     | Key                                 |
+| ------------------------------------------ | ----------------------------------- |
+| Move left / right                          | `A` / `D` (also arrow keys)         |
+| Jump / crouch                              | `W` / `S` (also arrow keys)         |
+| Light Punch / Heavy Punch / Kick / Special | `J` / `K` / `L` / `U`               |
+| Block                                      | `Space`                             |
+| Pause                                      | `P` (Escape closes the pause popup) |
 
-- **Header:** `SELECT CHARACTER` in the shared orange-accented arcade frame.
-- **Top-left:** functional Back (returns to Game Mode Selection).
-- **Top-right:** the shared functional volume / fullscreen badges.
-- **Left:** large full-body artwork, name, fighting style and four clean animated statistics bars.
-- **Centre:** seven card plates in a balanced 4 + 3 grid, each with a bust portrait, unique colour theme, consistent cut-corner border, name, hover feedback and an orange selected glow with a `P1` tag.
-- **Right:** RANDOM mystery pick — hooded silhouette, purple SVG question mark, `shuffle` icon and `RANDOM` label.
-- **Bottom:** information bar with the default `CHOOSE YOUR FIGHTER`; selecting a fighter shows that fighter's short description.
+Touch: nine large circular controls (four-way D-pad plus Punch, Heavy, Kick, Special, Block), multi-touch capable, shown only on coarse-pointer devices when the saved setting allows. `MobileControls` applies all three Settings preferences — Show/Hide, Left-Handed and Touch Control Size — and clears held keys on release/blur so no control sticks.
 
-Selection works with mouse, touch and keyboard (arrows, Enter/Space, Escape/Backspace). A selection immediately updates the highlighted card, large artwork, name, style, statistics and information copy with a short frame-rate-independent easing. The default fighter is **Kenji**. RANDOM picks only from unlocked fighters and avoids repeating the current pick. State lives in the game-level `CharacterSelection` manager, so it survives a Back → forward round trip.
+## Modular architecture
 
-No CONTINUE button, arena selection or gameplay exists.
+```
+src/constants/     arenas, characters, controls, match/combat tuning, fighterFrames (generated)
+src/types/         arenas, match, input, characters, audio, system
+src/game/arenas/   ArenaSelection (game-level arena state)
+src/game/characters/ CharacterSelection, Fighter (physics + state machine)
+src/game/animations/ FighterAnimator (frame-based Phaser anims)
+src/game/combat/   CombatSystem, HitboxManager
+src/game/ai/       OpponentAI
+src/game/input/    InputManager (keyboard + virtual, held/pressed separation)
+src/game/match/    MatchSetup, MatchManager, PauseManager
+src/game/audio/    AudioManager, AudioUnlock, audioPreferences, audioKeys, Sfx
+src/game/config/   gameConfig, sceneRegistry, FullscreenManager, OrientationManager, QuitController
+src/game/scenes/   Boot, Loading, Welcome, GameMode, Character, Arena, ArenaPreview, VsIntro, Gameplay
+src/game/ui/       arena cards/panels, MatchHud, MobileControls, PausePopup, ResultOverlay,
+                   ScreenHeader, InfoBar, IconButton, ArcadeButton, ModalPopup, GameHud, ...
+```
 
----
+`sceneRegistry.ts` remains the single scene-registration point. `FIGHTER_ANIMATIONS` in `src/constants/fighterFrames.ts` is generated by the art pipeline from the exact same frame spec as the sprite sheets, so animation definitions and sheet layout cannot drift apart.
 
-## Roster and statistics
+## Assets and art pipeline
 
-All values live in `src/constants/characters.ts` — the UI never hardcodes a stat.
+`assets_work/process_phase6_assets.py` (Pillow / NumPy / SciPy, offline only) reproducibly generates:
 
-| Fighter   | Style                      | Power | Speed | Defense | Range |
-| --------- | -------------------------- | ----- | ----- | ------- | ----- |
-| KENJI     | Blazing Fist / Karate      | 0.78  | 0.90  | 0.60    | 0.55  |
-| SHADOW    | Shadow Arts / Ninjutsu     | 0.62  | 0.96  | 0.52    | 0.78  |
-| BLAZE     | Phoenix Flame / Striking   | 0.84  | 0.82  | 0.58    | 0.70  |
-| IRON FIST | Iron Guard / Brawling      | 0.94  | 0.48  | 0.92    | 0.42  |
-| STORM     | Thunder Style / Kickboxing | 0.70  | 0.88  | 0.62    | 0.80  |
-| RAVEN     | Blade Dance / Kenjutsu     | 0.74  | 0.86  | 0.56    | 0.94  |
-| TITAN     | Earthbreaker / Grappling   | 0.98  | 0.42  | 0.88    | 0.48  |
+- five 1280 × 720 arena backdrops — four original illustrations plus Temple Grounds derived from the established Welcome courtyard plate with integer doubling;
+- five 216 × 292 cut-corner arena card plates;
+- seven 1760 × 1560 sprite sheets (8 × 6 cells of 220 × 260) with **44 distinct frames each**, composed from the same chroma-keyed cutouts that produced the Phase 5 roster — so Kenji and Shadow keep their established designs;
+- sixteen short original synthesised WAV sound effects;
+- `src/constants/fighterFrames.ts` and a gitignored review sheet.
 
-All seven are currently unlocked. Kenji and Shadow keep their exact Phase 2 designs.
+The frame rig produces genuinely different poses per state (body lean, squash, limb-region extension, rotation, tint, accent motion arcs and glow), not a single static PNG slid across the screen. Phaser plays these as real frame-based animations at state-specific frame rates.
 
----
+All UI icons are vendored **Lucide** SVGs (ISC) with white strokes, rasterised at 64 × 64 with linear filtering. No emoji or Unicode text symbols are used as icons. Fonts remain the self-hosted Google Fonts WOFF2 faces from Phase 4, awaited before Phaser boots.
 
-## Architecture
+## Audio
 
-| Concern                                | File                                                                                             |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Roster, stats, layout, palette accents | `src/constants/characters.ts`                                                                    |
-| Shared HUD geometry                    | `src/constants/hud.ts`                                                                           |
-| Scene keys, events, registry keys      | `src/constants/scenes.ts`                                                                        |
-| Character / system types               | `src/types/characters.ts`, `src/types/system.ts`, `src/types/stage.ts`                           |
-| Character selection state              | `src/game/characters/CharacterSelection.ts`                                                      |
-| Audio service + mute preference        | `src/game/audio/AudioManager.ts`, `audioPreferences.ts`                                          |
-| Fullscreen service                     | `src/game/config/FullscreenManager.ts`                                                           |
-| Orientation service                    | `src/game/config/OrientationManager.ts`                                                          |
-| QUIT flow                              | `src/game/config/QuitController.ts`                                                              |
-| Scenes                                 | `src/game/scenes/{Boot,Loading,Welcome,GameMode,Character}Scene.ts`                              |
-| Single scene registration point        | `src/game/config/sceneRegistry.ts`                                                               |
-| Shared courtyard / header / info bar   | `src/game/ui/{CourtyardStage,ScreenHeader,InfoBar}.ts`                                           |
-| Shared system HUD                      | `src/game/ui/GameHud.ts`                                                                         |
-| Character views                        | `src/game/ui/{CharacterCard,CharacterShowcase,RandomOption,CharacterHeader,CharacterInfoBar}.ts` |
-| Popups                                 | `src/game/ui/{ModalPopup,AboutPopup,SettingsPopup,QuitPopup}.ts`                                 |
-| DEV inspection bridge                  | `src/utils/debugBridge.ts`                                                                       |
-
-`ModalPopup` now owns a `content` child container, so a popup can rebuild its body (used by the QUIT fallback) without duplicating the frame. `ModeHeader`/`ModeInfoBar` and `CharacterHeader`/`CharacterInfoBar` are thin presets over the shared components — no duplicated drawing code.
-
----
+`AudioManager` is the only sound service: one persistent theme sound, a master gain that mutes music and every SFX at once, and the saved mute preference restored from `localStorage`. SFX go through `playSfx()`/`Sfx.ts` and are destroyed on completion, so no duplicate instances accumulate. The persistent theme continues across every transition (including QUIT TO MAIN MENU); it is not restarted, and no second music instance is created. Phase 6 uses it as the arena/match music rather than adding a competing per-arena track.
 
 ## Shared systems
 
-`main.ts` attaches these singletons once; every screen uses the same instance, so there is exactly one audio manager, one fullscreen controller, one orientation controller, one quit controller and one character selection state.
+Phase 5's fixes remain in place and are reused by every new screen:
 
-| System               | Snapshot key               | Event                    |
-| -------------------- | -------------------------- | ------------------------ |
-| `AudioManager`       | `fa:audio-state`           | `fa:audio-changed`       |
-| `FullscreenManager`  | `fa:fullscreen-state`      | `fa:fullscreen-changed`  |
-| `OrientationManager` | `fa:orientation-state`     | `fa:orientation-changed` |
-| `QuitController`     | `fa:quit-state`            | `fa:quit-changed`        |
-| `CharacterSelection` | `fa:character-state`       | `fa:character-changed`   |
-| Character scene      | `fa:character-scene-state` | `fa:character-ready`     |
+- **QUIT** — `QuitController` + `QuitPopup`: exact `ARE YOU SURE YOU WANT TO QUIT?`, YES / CANCEL, `window.close()` only in a permitted context, then an honest `window.closed` check and a manual-close fallback. Never a blank screen or a false success.
+- **Volume** — `GameHud` badge toggles the central `AudioManager`, swaps `volume-2` / `volume-x` immediately, persists the preference, and never restarts music.
+- **Fullscreen** — `FullscreenManager` uses the Fullscreen API from a real gesture, syncs from `fullscreenchange` (browser-driven exits included), handles unsupported/denied requests without throwing, and refreshes FIT scaling without distortion.
+- **Orientation** — `OrientationManager` measures the real viewport (`visualViewport`, resize, `orientationchange`, media query), toggles a DOM overlay with a rotating phone illustration and the exact `ROTATE YOUR DEVICE` copy, coalesces scale refreshes, and never reloads a scene. `PauseManager` pauses active gameplay in portrait and auto-resumes only orientation pauses.
 
-The loading screen queues assets through counting helpers, so the honest `loadedFiles / totalFiles` indicator can never drift from the real loader queue (**46 files** in Phase 5).
+## Rendering and responsive behaviour
 
----
+Framebuffer `1280 × 720` with an integer camera zoom of 2 over the `640 × 360` logical space; all Phaser Text uses `resolution: 2`; the CSS stage is capped at `1280 × 720` and shown 1:1 or smoothly reduced. Pixel-art plates keep nearest-neighbour filtering while SVG icons use linear filtering. Landscape-only: portrait hides `#game-root` and shows the orientation overlay. Verified at `1920×1080`, `1280×720`, `1024×768`, `1024×600`, `844×390`, `667×375` (all ≈1.7778) and `390×844` portrait.
 
 ## Technology stack
 
-| Concern      | Choice                                     | Installed version                   |
-| ------------ | ------------------------------------------ | ----------------------------------- |
-| Game engine  | Phaser **3**                               | `phaser@3.90.0`                     |
-| Language     | TypeScript (strict)                        | `typescript@5.9.3`                  |
-| Rendering    | HTML5 Canvas / WebGL (`Phaser.AUTO`)       | —                                   |
-| Build tool   | Vite                                       | `vite@7.3.7`                        |
-| Code quality | ESLint (flat) + Prettier                   | `eslint@10.14.0`, `prettier@3.9.10` |
-| Icons        | Lucide SVG (vendored, ISC)                 | no runtime dependency               |
-| Art / audio  | Pillow / NumPy / SciPy pipelines (offline) | not a runtime dependency            |
+| Concern            | Choice                                                             |
+| ------------------ | ------------------------------------------------------------------ |
+| Game engine        | Phaser 3 (`phaser@3.90.0`)                                         |
+| Language           | TypeScript strict (`typescript@5.9.3`)                             |
+| Build              | Vite (`vite@7.3.7`)                                                |
+| Runtime dependency | `phaser` only                                                      |
+| Code quality       | ESLint 10 flat config + Prettier                                   |
+| Icons              | Vendored Lucide SVG (ISC), no runtime dependency                   |
+| Art / audio        | Offline Pillow / NumPy / SciPy pipelines, not runtime dependencies |
 
-**Runtime dependency:** `phaser` only. Node `^20.19.0 || >=22.12.0` and npm 10+ are required to build. **No new npm packages were added in Phase 5.**
-
----
+Node `^20.19.0 || >=22.12.0` and npm 10+ are required to build.
 
 ## Getting started
 
 ```bash
-git clone <repository-url>
-cd Fighters_Arena
-nvm use            # optional, uses .nvmrc (Node 22)
 npm install
 npm run dev        # http://localhost:5173
 ```
@@ -190,88 +172,35 @@ npm run preview    # http://localhost:4173
 
 Both servers bind to `0.0.0.0` and accept proxied host headers.
 
----
-
 ## npm scripts
 
-| Script                 | Command                      | Purpose                                       |
-| ---------------------- | ---------------------------- | --------------------------------------------- |
-| `npm run dev`          | `vite`                       | Development server with HMR                   |
-| `npm run build`        | `tsc --noEmit && vite build` | Type-check, then create the production bundle |
-| `npm run preview`      | `vite preview`               | Serve the built `dist/`                       |
-| `npm run typecheck`    | `tsc --noEmit`               | Strict TypeScript validation                  |
-| `npm run lint`         | `eslint .`                   | Lint all JS/TS sources                        |
-| `npm run lint:fix`     | `eslint . --fix`             | Apply safe auto-fixes                         |
-| `npm run format`       | `prettier --write .`         | Format the repository                         |
-| `npm run format:check` | `prettier --check .`         | Verify formatting (CI-friendly)               |
-
-Recommended pre-commit order: `npm run format && npm run lint && npm run typecheck && npm run build`.
-
----
-
-## Typography and icons
-
-| Face     | Weight    | Role                                     |
-| -------- | --------- | ---------------------------------------- |
-| Anton    | 400       | Loading percentage, large character name |
-| Oxanium  | 700 / 600 | Display headings, info bars              |
-| Rajdhani | 700 / 600 | Menu labels, card names, stat labels     |
-
-All five faces are self-hosted official `@fontsource` WOFF2 files (SIL OFL) under `public/assets/fonts/`, preloaded in `index.html`, forced through `document.fonts.load()` and awaited with `document.fonts.ready` **before** `new Phaser.Game()`. Every Phaser Text uses `resolution: 2` through `addUiText()`.
-
-**16 Lucide SVGs** (ISC) are vendored in `public/assets/ui/icons/`, rasterised once by Phaser at 64×64 with linear filtering. Phase 5 adds `volume-x`, `minimize`, `shuffle` and `circle-help`. No emoji, Unicode symbols, text-glyph icons or low-resolution raster icon sheets are used as interface icons.
-
----
-
-## Art pipeline
-
-`assets_work/process_character_assets.py` is the reproducible offline pipeline:
-
-1. Chroma-keys the flat `#00FF00` field from each original illustration with a despill and soft alpha edge.
-2. Crops a head-and-shoulders bust, cover-fits it into a 2×-authored cut-corner card plate with a themed gradient, accent glow, sparse pixel streaks and a dark caption band.
-3. Fits the full-body cutout into a 360×400 (2× of 180×200) transparent showcase plate.
-4. Produces the transparent RANDOM silhouette and a contact sheet for review.
-
-Outputs: `public/assets/characters/cards/card_<id>.png` (128×152), `public/assets/characters/showcase/show_<id>.png` (360×400) and `public/assets/characters/random_silhouette.png` (300×380). Nothing is stretched — every fit is contain/cover with a locked aspect ratio.
-
-```bash
-/tmp/fa-venv/bin/python assets_work/process_character_assets.py
-```
-
----
-
-## Rendering and responsive behaviour
-
-- Framebuffer `1280 × 720` (`RENDER_SCALE = 2`); every scene uses an integer camera zoom of 2 centred on `(320, 180)`, so all game code stays in the `640 × 360` logical space.
-- CSS stage is capped at `1280 × 720` with `image-rendering: auto`; the canvas is shown 1:1 or smoothly reduced, never magnified.
-- Landscape-only: desktop `1920×1080`, laptop `1024×768`, tablet `1024×600`, mobile `667×375` / `844×390` all keep a 16:9 stage (Phaser's `autoRound` may round the canvas CSS by ±1px on fractional sizes).
-- Portrait shows the redesigned overlay and hides the stage; returning to landscape re-measures FIT scaling without a scene reload.
-- Fullscreen letterboxes the stage on `document.documentElement` and never stretches the canvas.
-
----
+| Script                            | Purpose                               |
+| --------------------------------- | ------------------------------------- |
+| `npm run dev`                     | Vite dev server with HMR              |
+| `npm run build`                   | `tsc --noEmit` then production bundle |
+| `npm run preview`                 | Serve the built `dist/`               |
+| `npm run typecheck`               | Strict TypeScript validation          |
+| `npm run lint` / `lint:fix`       | ESLint                                |
+| `npm run format` / `format:check` | Prettier                              |
 
 ## Verification
 
-`npm run format:check`, `npm run lint`, `npm run typecheck` and `npm run build` all pass. A headless Chromium suite (`/tmp/fa-browser/p5_verify.mjs`, **245/245 checks**) covers:
+Executed with headless Chromium (Playwright) against the dev server and the production preview:
 
-- **Fixed functionality:** QUIT confirmation, CANCEL, YES fallback, a simulated permitted `window.close()` attempt, volume mute/unmute, icon swaps, localStorage persistence across reload, muted SFX suppression, fullscreen enter/exit, browser-driven exit sync, rejected requests and unsupported browsers, portrait overlay at phone/tablet sizes with exact copy and animation, landscape recovery with no scene reload.
-- **New screen:** Welcome → Mode Select → Character Select, seven card selections with exact names/statistics/artwork textures, one highlighted card at a time, RANDOM over ten picks, keyboard navigation, Back, default `CHOOSE YOUR FIGHTER` copy and the selected-fighter description.
-- **Regression:** 46/46 loading files with zero errors, all five fonts, `1280×720` framebuffer, zoom 2, `worldView [0,0,640,360]`, 16 icon textures at ≥64px, all Text at resolution 2, About/Settings popups and preference persistence, one active music sound with an unchanged start timestamp across all transitions, 216 asset responses all 2xx, zero console/page/request errors.
+- **Gates:** `format:check`, `lint`, `typecheck`, clean `npm run build`.
+- **Loading / regression:** 98 queued files, `loadErrors: 0`, all fonts loaded, canvas `1280 × 720` with zoom 2, music playing from the 70% trigger, all five fonts, Loading / Welcome / Game Mode / Character screens still boot, mobile Settings persisted.
+- **Phase 5 fixes:** QUIT popup copy, CANCEL, blocked-close fallback, volume mute/unmute with persistence and no music restart, one active music sound, fullscreen request/exit/browser-driven sync, portrait overlay copy + animation + glows, landscape recovery.
+- **Flow:** all seven character cards, statistics from character data, RANDOM among unlocked fighters, Back chain, five arena cards, arrows, preview PREVIOUS/NEXT with live panels, CONFIRM twice, VS sequence auto-complete, Gameplay inheriting player/opponent/arena/mode, non-default Titan + Frozen Peak integration.
+- **Gameplay:** A/D/W/S/Space, facing, bounds, all four attacks, real hitbox damage, blocking reduction, special energy cost/gate, timer, AI state changes, best-of-three rounds, result overlay, REMATCH, pause/resume/restart/quit, portrait pause with no auto-resume of an intentional pause.
+- **Mobile / audio:** nine touch buttons, saved left-handed/large preferences, held D-pad movement, simultaneous two-finger input, no stuck keys, sixteen SFX cached, muted SFX not played, single persistent music instance.
+- **Screenshots reviewed:** Welcome, Game Mode, Character, Arena Selection, Arena Preview, VS Intro, Gameplay (Temple Grounds and Frozen Peak), result overlay, mobile controls, portrait overlay.
 
-A production preview (`vite preview`) was also verified: the built bundle contains all character art, all 16 SVG icons and all five font preloads, with `debugBridge` absent in production.
+**Not proven:** headless Chromium is muted, so audible playback cannot be verified. SwiftShader runs at roughly 10 FPS, so the 60 FPS target is not benchmarked on real hardware; viewport emulation is not a physical device test. Autoplay-unlock enforcement was strictly proven in Phase 2, not re-proven here.
 
-### Not proven by these tests
+## Known limitations and deferred work
 
-- Headless Chromium is muted, so **audible** playback is never proven; the Web Audio gain node, context state and sound-instance count are verified programmatically.
-- SwiftShader runs at roughly 10 FPS, so the **60 FPS target** is not benchmarked on real hardware and tween wall-clock timings are stretched in that environment.
-- Orientation and responsive results come from viewport emulation, not physical devices.
-- `window.close()` was stubbed/simulated in the automated run; a real tab closing cannot be observed from inside the same page. The browser-blocked fallback is the verified real-world path.
-- Fullscreen capability removal mid-session is a simulated condition; real browsers do not change capability at runtime.
-
----
-
-## Phase scope and deferred work
-
-Deliberately **not** implemented: arena selection, implemented game modes, fighting mechanics/gameplay, player movement, combat AI, health bars, matchmaking, tournament/multiplayer/survival systems, extra settings, a CONTINUE button, and any personal watermark/credit.
-
-The next phase starts only on a new instruction.
+- Fighter frames are composed procedurally from the established character cutouts (real distinct poses, 17 states) rather than hand-drawn keyframe sprite sheets; limb articulation is intentionally stylised.
+- There is no separate per-arena music track — the persistent theme serves as the match music to avoid duplicate instances and restarts.
+- No character-specific voice lines, no advanced results/leaderboard screen, no tournament/multiplayer/survival implementation, and no Arena Selection beyond the five configured arenas.
+- Game modes remain display-only selections carried through the flow; they do not yet change match rules.
+- `debugBridge` and the DEV-only `__FA__` inspection handle are excluded from production builds.

@@ -1,10 +1,65 @@
-/** Audio cache keys and mix levels. SFX keys get added in later phases. */
+/** Audio cache keys and mix levels. */
 export const MUSIC_KEYS = {
   THEME: 'music-theme-main',
 } as const;
 
+/** Original synthesised SFX, one cache key per sound. */
 export const SFX_KEYS = {
-  // Reserved for menu / UI / combat sounds in later phases.
+  UI_CLICK: 'sfx-ui-click',
+  UI_CONFIRM: 'sfx-ui-confirm',
+  UI_BACK: 'sfx-ui-back',
+  ROUND_BELL: 'sfx-round-bell',
+  PUNCH_LIGHT: 'sfx-punch-light',
+  PUNCH_HEAVY: 'sfx-punch-heavy',
+  KICK: 'sfx-kick',
+  BLOCK: 'sfx-block',
+  HIT: 'sfx-hit',
+  JUMP: 'sfx-jump',
+  ENTRANCE: 'sfx-entrance',
+  SPECIAL: 'sfx-special',
+  READY: 'sfx-ready',
+  FIGHT: 'sfx-fight',
+  VICTORY: 'sfx-victory',
+  DEFEAT: 'sfx-defeat',
+} as const;
+
+export type SfxKey = (typeof SFX_KEYS)[keyof typeof SFX_KEYS];
+
+/** Filename -> cache key. The loading screen queues exactly these files. */
+export const SFX_FILES: readonly { name: string; key: SfxKey }[] = [
+  { name: 'ui_click', key: SFX_KEYS.UI_CLICK },
+  { name: 'ui_confirm', key: SFX_KEYS.UI_CONFIRM },
+  { name: 'ui_back', key: SFX_KEYS.UI_BACK },
+  { name: 'round_bell', key: SFX_KEYS.ROUND_BELL },
+  { name: 'punch_light', key: SFX_KEYS.PUNCH_LIGHT },
+  { name: 'punch_heavy', key: SFX_KEYS.PUNCH_HEAVY },
+  { name: 'kick', key: SFX_KEYS.KICK },
+  { name: 'block', key: SFX_KEYS.BLOCK },
+  { name: 'hit', key: SFX_KEYS.HIT },
+  { name: 'jump', key: SFX_KEYS.JUMP },
+  { name: 'entrance', key: SFX_KEYS.ENTRANCE },
+  { name: 'special', key: SFX_KEYS.SPECIAL },
+  { name: 'ready', key: SFX_KEYS.READY },
+  { name: 'fight', key: SFX_KEYS.FIGHT },
+  { name: 'victory', key: SFX_KEYS.VICTORY },
+  { name: 'defeat', key: SFX_KEYS.DEFEAT },
+] as const;
+
+/** Semantic sound names used by gameplay code. */
+export const SFX = {
+  UI_CLICK: SFX_KEYS.UI_CLICK,
+  UI_CONFIRM: SFX_KEYS.UI_CONFIRM,
+  UI_BACK: SFX_KEYS.UI_BACK,
+  ROUND_BELL: SFX_KEYS.ROUND_BELL,
+  ENTRANCE: SFX_KEYS.ENTRANCE,
+  READY: SFX_KEYS.READY,
+  FIGHT: SFX_KEYS.FIGHT,
+  JUMP: SFX_KEYS.JUMP,
+  BLOCK: SFX_KEYS.BLOCK,
+  HIT: SFX_KEYS.HIT,
+  VICTORY: SFX_KEYS.VICTORY,
+  DEFEAT: SFX_KEYS.DEFEAT,
+  SPECIAL: SFX_KEYS.SPECIAL,
 } as const;
 
 export const AUDIO_CONFIG = {

@@ -18,6 +18,8 @@ export const ASSET_PATHS = {
   ui: `${ASSET_ROOT}/ui`,
   icons: `${ASSET_ROOT}/ui/icons`,
   cards: `${ASSET_ROOT}/cards`,
+  arenaBackgrounds: `${ASSET_ROOT}/arenas/backgrounds`,
+  arenaCards: `${ASSET_ROOT}/arenas/cards`,
   fonts: `${ASSET_ROOT}/fonts`,
 } as const;
 
@@ -91,6 +93,20 @@ export const characterShowcaseUrl = (id: string): string =>
 
 export const randomSilhouetteUrl = (): string =>
   assetUrl(`${ASSET_PATHS.characters}/random_silhouette.png`);
+
+/** Phase 6: arena art, frame-based fighter sheets and original SFX. */
+export const arenaBackgroundUrl = (id: string): string =>
+  assetUrl(`${ASSET_PATHS.arenaBackgrounds}/arena_${id}.png`);
+
+export const arenaCardUrl = (id: string): string =>
+  assetUrl(`${ASSET_PATHS.arenaCards}/card_${id}.png`);
+
+export const fighterSheetUrl = (id: string): string =>
+  assetUrl(`${ASSET_PATHS.spriteSheets}/fight_${id}.png`);
+
+export const fighterSheetTextureKey = (id: string): string => `fighter-sheet-${id}`;
+
+export const sfxUrl = (name: string): string => assetUrl(`${ASSET_PATHS.sfx}/${name}.wav`);
 
 /** The loading screen spritesheet frames are authored at 16 x 24 pixels. */
 export const FLAME_FRAME = { width: 16, height: 24, count: 4 } as const;

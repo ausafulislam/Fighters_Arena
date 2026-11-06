@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 
+import { ArenaSelection } from '@/game/arenas/ArenaSelection';
 import { CharacterSelection } from '@/game/characters/CharacterSelection';
+import { MatchSetup } from '@/game/match/MatchSetup';
 import { GAME_CONFIG } from '@/game/config/gameConfig';
 import { SCENES } from '@/game/config/sceneRegistry';
 import { FullscreenManager } from '@/game/config/FullscreenManager';
@@ -25,6 +27,8 @@ async function bootstrap(): Promise<void> {
   FullscreenManager.getInstance().attach(game);
   QuitController.getInstance().attach(game);
   CharacterSelection.getInstance().attach(game);
+  ArenaSelection.getInstance().attach(game);
+  MatchSetup.getInstance().attach(game);
 
   if (import.meta.env.DEV) exposeDebugBridge(game);
 }

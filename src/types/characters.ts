@@ -39,6 +39,7 @@ export interface CharacterSnapshot {
   hoveredIndex: number | null;
   artwork: { x: number; y: number; width: number; height: number };
   backCount: number;
+  continueCount: number;
   transitionedFrom: string | null;
   modeId: string | null;
 }
