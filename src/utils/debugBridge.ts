@@ -1,4 +1,13 @@
+import type Phaser from 'phaser';
+
+import { CHARACTERS } from '@/constants/characters';
+import {
+  FIGHTER_ANIMATIONS,
+  FIGHTER_ANIMATION_NAMES,
+  FIGHTER_FRAME_COUNT,
+} from '@/constants/fighterFrames';
 import { REGISTRY_KEYS } from '@/constants/scenes';
+import { fighterAnimKey } from '@/game/animations/FighterAnimator';
 import { AudioManager } from '@/game/audio/AudioManager';
 import { FullscreenManager } from '@/game/config/FullscreenManager';
 import { ArenaSelection } from '@/game/arenas/ArenaSelection';
@@ -24,6 +33,31 @@ import type { FullscreenSnapshot, OrientationSnapshot, QuitSnapshot } from '@/ty
 interface DebugRegistry {
   registry: { get: (key: string) => unknown };
   scene: { getScenes: (activeOnly: boolean) => Array<{ scene: { key: string } }> };
+}
+
+export interface FADebugAnimation {
+  name: string;
+  key: string;
+  exists: boolean;
+  frameCount: number;
+  frames: number[];
+  distinctFrames: number;
+  fps: number;
+  repeat: number;
+  durationMs: number;
+}
+
+export interface FADebugAnimationReport {
+  frameCount: number;
+  animationCount: number;
+  characterCount: number;
+  allRegistered: boolean;
+  allDistinct: boolean;
+  characters: Array<{
+    id: string;
+    allRegistered: boolean;
+    animations: FADebugAnimation[];
+  }>;
 }
 
 export interface FADebugState {
@@ -61,6 +95,8 @@ declare global {
       gameplayReadyEvents: number;
       /** DEV-only raw game handle for inspecting the Web Audio gain node. */
       game: unknown;
+      /** DEV-only report proving every fighter has real, distinct Phaser anims. */
+      animations: () => FADebugAnimationReport;
       /** DEV-only handle for verifying that SFX respect the mute preference. */
       audioManager: {
         playSfx: (key: string, volume?: number) => void;
@@ -113,8 +149,58 @@ export function exposeDebugBridge(game: unknown): void {
     gameplayEvents += 1;
   });
 
+  const animationReport = (): FADebugAnimationReport => {
+    const active = g.scene.getScenes(true) as Array<{
+      anims?: Phaser.Animations.AnimationManager;
+    }>;
+    const manager =
+      (g as unknown as { anims?: Phaser.Animations.AnimationManager }).anims ??
+      active.find((scene) => scene.anims)?.anims;
+    const characters = CHARACTERS.map((config) => {
+      const animations = FIGHTER_ANIMATION_NAMES.map((name): FADebugAnimation => {
+        const key = fighterAnimKey(config.id, name);
+        const definition = FIGHTER_ANIMATIONS[name];
+        const exists = manager?.exists(key) ?? false;
+        const frames = exists
+          ? (manager?.get(key)?.frames ?? []).map((entry) => Number(entry.frame.name))
+          : [];
+        return {
+          name,
+          key,
+          exists,
+          frameCount: frames.length,
+          frames,
+          distinctFrames: new Set(frames).size,
+          fps: definition.fps,
+          repeat: definition.repeat,
+          durationMs: definition.durationMs,
+        };
+      });
+      return {
+        id: config.id,
+        allRegistered: animations.every((entry) => entry.exists),
+        animations,
+      };
+    });
+    return {
+      frameCount: FIGHTER_FRAME_COUNT,
+      animationCount: FIGHTER_ANIMATION_NAMES.length,
+      characterCount: characters.length,
+      allRegistered: characters.every((entry) =>
+        entry.animations.every((anim) => anim.exists && anim.frameCount > 0),
+      ),
+      allDistinct: characters.every((entry) =>
+        entry.animations.every(
+          (anim) => anim.distinctFrames === anim.frameCount && anim.frameCount > 0,
+        ),
+      ),
+      characters,
+    };
+  };
+
   window.__FA__ = {
     game,
+    animations: animationReport,
     audioManager: AudioManager.getInstance(),
     managers: {
       character: CharacterSelection.getInstance(),

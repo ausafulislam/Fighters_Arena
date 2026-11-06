@@ -21,6 +21,10 @@ export const SFX_KEYS = {
   FIGHT: 'sfx-fight',
   VICTORY: 'sfx-victory',
   DEFEAT: 'sfx-defeat',
+  LAND: 'sfx-land',
+  WHIFF: 'sfx-whiff',
+  COMBO: 'sfx-combo',
+  KO: 'sfx-ko',
 } as const;
 
 export type SfxKey = (typeof SFX_KEYS)[keyof typeof SFX_KEYS];
@@ -43,6 +47,10 @@ export const SFX_FILES: readonly { name: string; key: SfxKey }[] = [
   { name: 'fight', key: SFX_KEYS.FIGHT },
   { name: 'victory', key: SFX_KEYS.VICTORY },
   { name: 'defeat', key: SFX_KEYS.DEFEAT },
+  { name: 'land', key: SFX_KEYS.LAND },
+  { name: 'whiff', key: SFX_KEYS.WHIFF },
+  { name: 'combo', key: SFX_KEYS.COMBO },
+  { name: 'ko', key: SFX_KEYS.KO },
 ] as const;
 
 /** Semantic sound names used by gameplay code. */
@@ -60,6 +68,10 @@ export const SFX = {
   VICTORY: SFX_KEYS.VICTORY,
   DEFEAT: SFX_KEYS.DEFEAT,
   SPECIAL: SFX_KEYS.SPECIAL,
+  LAND: SFX_KEYS.LAND,
+  WHIFF: SFX_KEYS.WHIFF,
+  COMBO: SFX_KEYS.COMBO,
+  KO: SFX_KEYS.KO,
 } as const;
 
 export const AUDIO_CONFIG = {

@@ -7,6 +7,8 @@ import {
   arenaBackgroundUrl,
   arenaCardUrl,
   characterCardUrl,
+  characterPortraitTextureKey,
+  characterPortraitUrl,
   characterShowcaseUrl,
   fighterSheetTextureKey,
   fighterSheetUrl,
@@ -21,6 +23,7 @@ import { SFX_FILES } from '@/game/audio/audioKeys';
 import { BACKGROUND_COLOR } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
 import { AUDIO_CONFIG, MUSIC_KEYS } from '@/game/audio/audioKeys';
+import { registerAllFighterAnimations } from '@/game/animations/FighterAnimator';
 import { AudioManager } from '@/game/audio/AudioManager';
 import { NEXT_SCENE_KEY, startNextScene } from '@/game/config/gameFlow';
 import { FighterShowcase } from '@/game/ui/FighterShowcase';
@@ -152,6 +155,7 @@ export class LoadingScene extends Phaser.Scene {
     for (const config of CHARACTERS) {
       image(config.cardTextureKey, characterCardUrl(config.id));
       image(config.showcaseTextureKey, characterShowcaseUrl(config.id));
+      image(characterPortraitTextureKey(config.id), characterPortraitUrl(config.id));
     }
     image(TEXTURE_KEYS.RANDOM_SILHOUETTE, randomSilhouetteUrl());
 
@@ -252,6 +256,13 @@ export class LoadingScene extends Phaser.Scene {
 
   create(): void {
     applyIconFiltering(this);
+    // Register every fighter's 21 Phaser anims once, globally, as soon as the
+    // sheets exist. All seven fighters are therefore always animation-ready,
+    // including the animation preview tool and any later scene.
+    registerAllFighterAnimations(
+      this,
+      CHARACTERS.map((config) => config.id),
+    );
     this.ensureAllVisuals();
     this.background.startAnimations();
     this.logo.playEntrance();

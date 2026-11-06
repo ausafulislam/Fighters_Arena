@@ -32,6 +32,7 @@ export const UI_ICONS = {
   QUESTION: 'circle-help',
   ARROW_UP: 'arrow-up',
   ARROW_DOWN: 'arrow-down',
+  ARROW_RIGHT: 'arrow-right',
   CHEVRON_LEFT: 'chevron-left',
   CHEVRON_RIGHT: 'chevron-right',
   PAUSE: 'pause',

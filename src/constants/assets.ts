@@ -10,6 +10,7 @@ export const ASSET_PATHS = {
   spriteSheets: `${ASSET_ROOT}/characters/spritesheets`,
   characterCards: `${ASSET_ROOT}/characters/cards`,
   characterShowcase: `${ASSET_ROOT}/characters/showcase`,
+  characterPortraits: `${ASSET_ROOT}/characters/portraits`,
   animations: `${ASSET_ROOT}/characters/animations`,
   arenas: `${ASSET_ROOT}/arenas`,
   backgrounds: `${ASSET_ROOT}/arenas/backgrounds`,
@@ -84,6 +85,10 @@ export const ASSET_URLS = {
 /** Character roster texture keys and URLs are derived from the data ids. */
 export const characterCardTextureKey = (id: string): string => `character-card-${id}`;
 export const characterShowcaseTextureKey = (id: string): string => `character-show-${id}`;
+export const characterPortraitTextureKey = (id: string): string => `character-portrait-${id}`;
+
+export const characterPortraitUrl = (id: string): string =>
+  assetUrl(`${ASSET_PATHS.characterPortraits}/portrait_${id}.png`);
 
 export const characterCardUrl = (id: string): string =>
   assetUrl(`${ASSET_PATHS.characterCards}/card_${id}.png`);

@@ -11,27 +11,39 @@ export const MATCH_CONFIG = {
   ARENA_RIGHT: 608,
   PLAYER_START_X: 208,
   OPPONENT_START_X: 432,
-  FIGHTER_WIDTH: 54,
-  FIGHTER_HEIGHT: 118,
-  MIN_DISTANCE: 42,
+  /** One authored sprite cell is 120 x 112; the physics body is centred on it. */
+  FIGHTER_FRAME_WIDTH: 120,
+  FIGHTER_FRAME_HEIGHT: 112,
+  FIGHTER_WIDTH: 44,
+  FIGHTER_HEIGHT: 112,
+  MIN_DISTANCE: 46,
+  /** Real Arcade Physics gravity (px/s^2) and jump impulse (px/s). */
   GRAVITY: 1500,
-  JUMP_VELOCITY: -455,
-  WALK_SPEED: 98,
-  BACK_SPEED: 76,
-  RUN_SPEED: 158,
+  JUMP_VELOCITY: -470,
+  MAX_FALL_SPEED: 620,
+  /** Exponential velocity response: controlled acceleration / deceleration. */
+  MOVE_RESPONSE: 15,
+  AIR_CONTROL: 0.55,
+  WALK_SPEED: 100,
+  BACK_SPEED: 80,
+  RUN_SPEED: 168,
   SPECIAL_MAX: 100,
   SPECIAL_COST: 60,
   ENERGY_ON_HIT: 14,
   ENERGY_ON_TAKING_HIT: 8,
   BLOCK_REDUCTION: 0.22,
-  HITSTUN_MS: 260,
-  KNOCKDOWN_MS: 720,
-  GETUP_MS: 420,
+  HITSTUN_MS: 280,
+  KNOCKDOWN_MS: 560,
+  GETUP_MS: 670,
   ROUND_INTRO_MS: 1400,
   ROUND_END_MS: 1500,
   COMBO_WINDOW_MS: 900,
   AI_DECISION_MS: 260,
   MAX_DELTA_MS: 50,
+  /** Short, controlled camera shake on heavy / special connects. */
+  SHAKE_LIGHT_MS: 70,
+  SHAKE_HEAVY_MS: 120,
+  SHAKE_INTENSITY: 0.0022,
 } as const;
 
 export interface AttackConfig {
@@ -51,6 +63,8 @@ export interface AttackConfig {
   hitstunMs: number;
   energyGain: number;
   cooldownMs: number;
+  /** Heavy strikes floor the defender into a knockdown / get-up sequence. */
+  knockdown: boolean;
   sfx: string;
 }
 
@@ -74,6 +88,7 @@ export const ATTACKS: Readonly<Record<AttackName, AttackConfig>> = {
     hitstunMs: 200,
     energyGain: 10,
     cooldownMs: 60,
+    knockdown: false,
     sfx: 'punch_light',
   },
   heavy_punch: {
@@ -90,13 +105,14 @@ export const ATTACKS: Readonly<Record<AttackName, AttackConfig>> = {
     hitstunMs: 340,
     energyGain: 15,
     cooldownMs: 110,
+    knockdown: true,
     sfx: 'punch_heavy',
   },
   kick: {
     label: 'KICK',
     startupMs: 120,
     activeMs: 100,
-    recoveryMs: 210,
+    recoveryMs: 280,
     damage: 11,
     reach: 60,
     width: 50,
@@ -106,13 +122,14 @@ export const ATTACKS: Readonly<Record<AttackName, AttackConfig>> = {
     hitstunMs: 300,
     energyGain: 12,
     cooldownMs: 90,
+    knockdown: true,
     sfx: 'kick',
   },
   special: {
     label: 'SPECIAL ATTACK',
     startupMs: 190,
     activeMs: 190,
-    recoveryMs: 320,
+    recoveryMs: 370,
     damage: 22,
     reach: 78,
     width: 68,
@@ -122,6 +139,7 @@ export const ATTACKS: Readonly<Record<AttackName, AttackConfig>> = {
     hitstunMs: 460,
     energyGain: 0,
     cooldownMs: 260,
+    knockdown: true,
     sfx: 'special',
   },
 } as const;

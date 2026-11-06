@@ -1,15 +1,16 @@
 import Phaser from 'phaser';
 
-import { TEXTURE_KEYS } from '@/constants/assets';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/constants/game';
 import { MATCH_CONFIG, MATCH_DEPTH } from '@/constants/match';
 import { PALETTE_HEX } from '@/constants/palette';
 import { GAME_EVENTS, REGISTRY_KEYS, SCENE_KEYS } from '@/constants/scenes';
 import { ArenaSelection } from '@/game/arenas/ArenaSelection';
+import { ArenaAmbience } from '@/game/arenas/ArenaAmbience';
 import { MatchSetup } from '@/game/match/MatchSetup';
 import { OpponentAI } from '@/game/ai/OpponentAI';
 import { Fighter } from '@/game/characters/Fighter';
 import { CombatSystem } from '@/game/combat/CombatSystem';
+import { EffectsManager } from '@/game/combat/EffectsManager';
 import { InputManager } from '@/game/input/InputManager';
 import { MatchManager } from '@/game/match/MatchManager';
 import { PauseManager } from '@/game/match/PauseManager';
@@ -22,29 +23,24 @@ import { ResultOverlay } from '@/game/ui/ResultOverlay';
 import { loadMobileSettings } from '@/game/settings/mobileSettings';
 import { configureSceneCamera } from '@/utils/camera';
 import { MENU_FONT } from '@/utils/fonts';
-import { createSoftGlowTexture, RUNTIME_TEXTURES } from '@/utils/textures';
+import { createSoftGlowTexture } from '@/utils/textures';
 import { addUiText } from '@/utils/typography';
 import type { CombatHit } from '@/game/combat/CombatSystem';
 import type { MatchEvent, Winner } from '@/game/match/MatchManager';
+import type { FighterAnimationName } from '@/constants/fighterFrames';
 import type { MatchPhase, MatchSnapshot } from '@/types/match';
 import type { OrientationSnapshot } from '@/types/system';
 import type { MobileSettings } from '@/types/welcome';
 
-interface AmbientParticle {
-  image: Phaser.GameObjects.Image;
-  x: number;
-  y: number;
-  speed: number;
-  sway: number;
-  phase: number;
-}
-
 /**
- * Step 4-10: the actual playable 2D fighting match. Real gravity, ground
- * detection, facing, collision separation, startup/active/recovery attacks
- * with hitboxes, blocking, knockback, energy, combos, a state-based CPU,
- * best-of-three rounds, timer, pause, keyboard/touch controls and a live HUD.
- * Arena and fighters always come from the flow state, never hardcoded.
+ * The playable 2D fighting match.
+ *
+ * Arcade Physics owns gravity, ground detection, jump impulse, velocity and
+ * body separation. Both fighters run the same upper-case state machine and
+ * the same 21 real Phaser animations. Combat uses startup/active/recovery
+ * hitboxes against body boxes; a state-based CPU, best-of-three rounds, HUD,
+ * layered arena ambience, controlled impact effects, pause and keyboard /
+ * multi-touch controls complete the arcade flow.
  */
 export class GameplayScene extends Phaser.Scene {
   private player!: Fighter;
@@ -57,14 +53,16 @@ export class GameplayScene extends Phaser.Scene {
   private hud!: MatchHud;
   private mobile!: MobileControls;
   private result!: ResultOverlay;
+  private ambience!: ArenaAmbience;
+  private effects!: EffectsManager;
   private pausePopup: PausePopup | null = null;
   private banner!: Phaser.GameObjects.Text;
-  private readonly ambient: AmbientParticle[] = [];
   private settings!: MobileSettings;
   private snapshot!: MatchSnapshot;
   private lastJumpCount = 0;
   private lastSpecialCount = 0;
   private bannerTimer: Phaser.Time.TimerEvent | null = null;
+  private physicsPaused = false;
   private leaving = false;
 
   constructor() {
@@ -76,6 +74,7 @@ export class GameplayScene extends Phaser.Scene {
     this.lastJumpCount = 0;
     this.lastSpecialCount = 0;
     this.bannerTimer = null;
+    this.physicsPaused = false;
     const setup = MatchSetup.getInstance().getSnapshot();
     this.snapshot = {
       sceneKey: SCENE_KEYS.GAMEPLAY,
@@ -108,6 +107,13 @@ export class GameplayScene extends Phaser.Scene {
       mobileControlsVisible: false,
       leftHanded: false,
       touchControlSize: 'medium',
+      physics: {
+        gravityY: MATCH_CONFIG.GRAVITY,
+        paused: false,
+        worldBottom: MATCH_CONFIG.GROUND_Y,
+        particles: 0,
+        effects: 0,
+      },
     };
   }
 
@@ -121,13 +127,21 @@ export class GameplayScene extends Phaser.Scene {
       vy: 0,
       health: MATCH_CONFIG.MAX_HEALTH,
       energy: 0,
-      state: 'idle',
+      state: 'IDLE',
+      animation: 'idle' as FighterAnimationName,
+      frameIndex: 0,
+      animationFrame: 0,
+      stateElapsedMs: 0,
       attack: null,
+      attackPhase: null,
       facing: 1,
       grounded: true,
+      blockedDown: false,
       blocking: false,
+      crouching: false,
       combo: 0,
-      frameIndex: 0,
+      bodyX: 0,
+      bodyY: 0,
     };
   }
 
@@ -139,6 +153,16 @@ export class GameplayScene extends Phaser.Scene {
     const setup = MatchSetup.getInstance();
     const arena = ArenaSelection.getInstance().selected;
     this.settings = loadMobileSettings();
+
+    // Real Arcade Physics world: the bottom bound IS the arena floor.
+    this.physics.world.setBounds(
+      MATCH_CONFIG.ARENA_LEFT,
+      0,
+      MATCH_CONFIG.ARENA_RIGHT - MATCH_CONFIG.ARENA_LEFT,
+      MATCH_CONFIG.GROUND_Y,
+    );
+    this.physics.resume();
+    this.physicsPaused = false;
 
     this.add
       .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, arena.backgroundTextureKey)
@@ -154,21 +178,7 @@ export class GameplayScene extends Phaser.Scene {
     floor.lineStyle(1, PALETTE_HEX.gold, 0.35);
     floor.lineBetween(0, MATCH_CONFIG.GROUND_Y, GAME_WIDTH, MATCH_CONFIG.GROUND_Y);
 
-    for (let i = 0; i < 14; i += 1) {
-      const image = this.add
-        .image(0, 0, TEXTURE_KEYS.PETAL)
-        .setTint(arena.ambient)
-        .setAlpha(0.35 + (i % 4) * 0.12)
-        .setDepth(MATCH_DEPTH.AMBIENT);
-      this.ambient.push({
-        image,
-        x: (i * 47) % GAME_WIDTH,
-        y: (i * 31) % 240,
-        speed: 8 + (i % 5) * 3,
-        sway: 3 + (i % 3) * 3,
-        phase: i * 0.7,
-      });
-    }
+    this.ambience = new ArenaAmbience(this, arena.id);
 
     this.player = new Fighter(this, setup.player, 'player', MATCH_CONFIG.PLAYER_START_X, 1);
     this.opponent = new Fighter(
@@ -178,7 +188,18 @@ export class GameplayScene extends Phaser.Scene {
       MATCH_CONFIG.OPPONENT_START_X,
       -1,
     );
+    // Arcade Physics separation; fighters cannot pass through one another.
+    // Airborne fighters are allowed to cross so a jump never stacks them.
+    this.physics.add.collider(
+      this.player.sprite,
+      this.opponent.sprite,
+      undefined,
+      () => this.player.grounded && this.opponent.grounded,
+      this,
+    );
+
     this.combat = new CombatSystem((hit) => this.onHit(hit));
+    this.effects = new EffectsManager(this);
     this.banner = addUiText(this, 320, 150, 'READY', {
       fontFamily: MENU_FONT,
       fontSize: '36px',
@@ -221,12 +242,14 @@ export class GameplayScene extends Phaser.Scene {
     const frame = this.controls.read();
     this.mobile.update(time);
 
-    const active =
-      !this.pause.paused &&
-      this.match.phase !== 'matchEnd' &&
-      this.match.phase !== 'roundEnd' &&
-      !this.leaving;
+    const paused = this.pause.paused;
+    const physicsFrozen =
+      paused || this.match.phase === 'roundEnd' || this.match.phase === 'matchEnd' || this.leaving;
+    this.setPhysicsFrozen(physicsFrozen);
+    this.player.setAnimationsPaused(paused || this.leaving);
+    this.opponent.setAnimationsPaused(paused || this.leaving);
 
+    const active = !physicsFrozen;
     if (active) {
       const aiFrame = this.ai.update(dtMs, this.opponent, this.player);
       this.player.update(dtMs, frame, this.opponent);
@@ -237,16 +260,24 @@ export class GameplayScene extends Phaser.Scene {
       for (const event of this.match.update(dtMs, this.player, this.opponent)) {
         this.handleMatchEvent(event);
       }
-    } else if (!this.pause.paused && this.match.phase === 'roundEnd') {
-      // Rules still advance during the round-end hold, but combat is frozen.
+    } else if (!paused && this.match.phase === 'roundEnd') {
+      // Rules still advance during the round-end hold; combat is frozen.
       for (const event of this.match.update(dtMs, this.player, this.opponent)) {
         this.handleMatchEvent(event);
       }
     }
 
-    this.updateAmbient(time, dtMs);
+    this.ambience.update(time, dtMs);
+    if (!paused) this.effects.update(dtMs);
     this.hud.update(this.match, this.player, this.opponent);
     this.publish();
+  }
+
+  private setPhysicsFrozen(value: boolean): void {
+    if (this.physicsPaused === value) return;
+    this.physicsPaused = value;
+    if (value) this.physics.pause();
+    else this.physics.resume();
   }
 
   private trackPlayerCounters(): void {
@@ -262,19 +293,8 @@ export class GameplayScene extends Phaser.Scene {
 
   private onHit(hit: CombatHit): void {
     this.match.registerHit(hit.blocked);
-    const spark = this.add
-      .image(hit.x, hit.y, RUNTIME_TEXTURES.SOFT_GLOW)
-      .setTint(hit.blocked ? PALETTE_HEX.gold : PALETTE_HEX.orange)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDisplaySize(hit.blocked ? 26 : 38, hit.blocked ? 26 : 38)
-      .setDepth(MATCH_DEPTH.EFFECTS);
-    this.tweens.add({
-      targets: spark,
-      alpha: 0,
-      scale: 1.7,
-      duration: 220,
-      onComplete: () => spark.destroy(),
-    });
+    this.effects.onHit(hit);
+    this.hud.pulseDamage(hit.defender.side);
   }
 
   private handleMatchEvent(event: MatchEvent): void {
@@ -307,15 +327,20 @@ export class GameplayScene extends Phaser.Scene {
     this.ai.reset();
     this.result.hide();
     this.hud.setPauseEnabled(true);
+    this.setPhysicsFrozen(false);
     this.showBanner('READY', '#FFC247');
     playSfx(SFX.ROUND_BELL);
   }
 
   private onRoundEnd(): void {
-    const winner = this.match.winner;
-    this.showBanner(winner === 'draw' ? 'DRAW' : 'K.O.', winner === 'draw' ? '#FFFFFF' : '#FFC247');
+    const winner: Winner = this.match.winner;
+    const label = winner === 'draw' ? 'DRAW' : 'K.O.';
+    const color = winner === 'draw' ? '#FFFFFF' : '#FFC247';
+    this.showBanner(label, color);
+    this.effects.roundBanner(label, color);
     this.player.celebrate(winner === 'player');
     this.opponent.celebrate(winner === 'opponent');
+    playSfx(SFX.KO);
     if (winner === 'player') playSfx(SFX.VICTORY);
     else if (winner === 'opponent') playSfx(SFX.DEFEAT);
   }
@@ -341,18 +366,6 @@ export class GameplayScene extends Phaser.Scene {
     this.bannerTimer?.remove();
     this.bannerTimer = null;
     this.tweens.add({ targets: this.banner, alpha: 0, duration: 220 });
-  }
-
-  private updateAmbient(timeMs: number, dtMs: number): void {
-    const seconds = timeMs / 1000;
-    for (const particle of this.ambient) {
-      particle.y += particle.speed * (dtMs / 1000);
-      if (particle.y > GAME_HEIGHT) particle.y = -4;
-      particle.image.setPosition(
-        Math.round(particle.x + Math.sin(seconds * 0.7 + particle.phase) * particle.sway),
-        Math.round(particle.y),
-      );
-    }
   }
 
   // --- Pause / orientation ------------------------------------------------
@@ -427,8 +440,12 @@ export class GameplayScene extends Phaser.Scene {
     this.game.events.off(GAME_EVENTS.ORIENTATION_CHANGED, this.onOrientationChanged, this);
     this.bannerTimer?.remove();
     this.controls.destroy();
+    this.ambience.destroy();
+    this.effects.destroy();
     this.player.destroy();
     this.opponent.destroy();
+    // Do NOT call this.physics.resume() here: the scene's Arcade world is
+    // already being torn down during SHUTDOWN and its body is null.
   };
 
   private publish(): void {
@@ -453,6 +470,13 @@ export class GameplayScene extends Phaser.Scene {
     this.snapshot.pauseCount = this.pause.pauseCount;
     this.snapshot.resumeCount = this.pause.resumeCount;
     this.snapshot.mobileControlsVisible = this.mobile.isVisible;
+    this.snapshot.physics = {
+      gravityY: this.player.body.gravity.y,
+      paused: this.physicsPaused,
+      worldBottom: this.physics.world.bounds.bottom,
+      particles: this.ambience.particleCount,
+      effects: this.effects.effectCount,
+    };
     this.game.registry.set(REGISTRY_KEYS.MATCH_STATE, {
       ...this.snapshot,
       player: { ...this.snapshot.player },

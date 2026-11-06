@@ -19,6 +19,7 @@ export class MatchHud {
   private readonly health: Phaser.GameObjects.Graphics;
   private readonly energy: Phaser.GameObjects.Graphics;
   private readonly rounds: Phaser.GameObjects.Graphics;
+  private readonly damageFlash: Phaser.GameObjects.Graphics;
   private readonly timerText: Phaser.GameObjects.Text;
   private readonly comboText: Phaser.GameObjects.Text;
   readonly pauseButton: IconButton;
@@ -32,8 +33,13 @@ export class MatchHud {
     this.scene = scene;
     const depth = MATCH_DEPTH.HUD;
 
-    this.portrait(L.playerPortrait.x, L.playerPortrait.y, playerConfig.cardTextureKey, depth);
-    this.portrait(L.opponentPortrait.x, L.opponentPortrait.y, opponentConfig.cardTextureKey, depth);
+    this.portrait(L.playerPortrait.x, L.playerPortrait.y, playerConfig.portraitTextureKey, depth);
+    this.portrait(
+      L.opponentPortrait.x,
+      L.opponentPortrait.y,
+      opponentConfig.portraitTextureKey,
+      depth,
+    );
 
     tracked(
       scene,
@@ -67,6 +73,10 @@ export class MatchHud {
     this.health = scene.add.graphics().setDepth(depth);
     this.energy = scene.add.graphics().setDepth(depth);
     this.rounds = scene.add.graphics().setDepth(depth);
+    this.damageFlash = scene.add
+      .graphics()
+      .setDepth(depth + 1)
+      .setAlpha(0);
 
     const timerFrame = scene.add.graphics().setDepth(depth);
     timerFrame.fillStyle(0x000000, 0.6);
@@ -109,16 +119,35 @@ export class MatchHud {
 
   private portrait(x: number, y: number, textureKey: string, depth: number): void {
     const size = 40;
-    const image = this.scene.add
+    this.scene.add
       .image(x, y, textureKey || characterCardTextureKey('kenji'))
       .setDisplaySize(size, size)
       .setDepth(depth + 1);
-    image.setCrop(4, 4, 120, 120);
     const frame = this.scene.add.graphics().setDepth(depth + 2);
     frame.lineStyle(2.5, PALETTE_HEX.gold, 1);
     frame.strokePoints(octagon(size + 6, size + 6, 8, x, y), true);
     frame.lineStyle(1.5, PALETTE_HEX.orange, 0.9);
     frame.strokePoints(octagon(size + 1, size + 1, 7, x, y), true);
+  }
+
+  /** Brief, controlled white pulse over the bar that actually took damage. */
+  pulseDamage(side: 'player' | 'opponent'): void {
+    const layout = side === 'player' ? L.playerBar : L.opponentBar;
+    this.damageFlash.clear();
+    this.damageFlash.fillStyle(0xffffff, 0.75);
+    this.damageFlash.fillRect(
+      layout.x - layout.width / 2,
+      layout.y - layout.height / 2 - 2,
+      layout.width + 4,
+      layout.height + 4,
+    );
+    this.damageFlash.setAlpha(0.85);
+    this.scene.tweens.add({
+      targets: this.damageFlash,
+      alpha: 0,
+      duration: 180,
+      ease: 'Quad.easeOut',
+    });
   }
 
   setPauseEnabled(value: boolean): void {

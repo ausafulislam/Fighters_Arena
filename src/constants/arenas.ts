@@ -139,6 +139,97 @@ export const ARENA_CONFIG = {
 
 export const LOCK_IN_TEXT = 'LOCK IN YOUR ARENA';
 
+/**
+ * Layered, non-interactive environment motion. Everything sits behind the
+ * fighters (depth < MATCH_DEPTH.FIGHTERS), so ambience can never hide a sprite
+ * animation. Values are in the 640 x 360 logical space.
+ */
+export interface ArenaAmbienceConfig {
+  /** Far parallax cloud / mist bank. */
+  clouds: number;
+  cloudColor: number;
+  cloudSpeed: number;
+  /** Near falling / drifting particles. */
+  particle: 'petal' | 'ember' | 'leaf' | 'snow' | 'rain';
+  particleCount: number;
+  particleColor: number;
+  particleSpeed: number;
+  particleSway: number;
+  /** Flickering lantern / neon lights. */
+  lanterns: number;
+  lanternColor: number;
+  /** Low ground haze / dust motes. */
+  groundMotes: number;
+}
+
+export const ARENA_AMBIENCE: Record<ArenaId, ArenaAmbienceConfig> = {
+  temple_grounds: {
+    clouds: 3,
+    cloudColor: 0x9682cd,
+    cloudSpeed: 2.2,
+    particle: 'petal',
+    particleCount: 18,
+    particleColor: 0xff8cc8,
+    particleSpeed: 10,
+    particleSway: 4,
+    lanterns: 3,
+    lanternColor: 0xffb347,
+    groundMotes: 6,
+  },
+  blazing_canyon: {
+    clouds: 2,
+    cloudColor: 0x9b3a1e,
+    cloudSpeed: 1.4,
+    particle: 'ember',
+    particleCount: 22,
+    particleColor: 0xff6a20,
+    particleSpeed: 22,
+    particleSway: 5,
+    lanterns: 0,
+    lanternColor: 0xff5a00,
+    groundMotes: 8,
+  },
+  bamboo_forest: {
+    clouds: 2,
+    cloudColor: 0x4c8f6a,
+    cloudSpeed: 1.0,
+    particle: 'leaf',
+    particleCount: 16,
+    particleColor: 0x7ce0a0,
+    particleSpeed: 9,
+    particleSway: 6,
+    lanterns: 4,
+    lanternColor: 0xffc247,
+    groundMotes: 5,
+  },
+  frozen_peak: {
+    clouds: 4,
+    cloudColor: 0x7fa8cc,
+    cloudSpeed: 3.0,
+    particle: 'snow',
+    particleCount: 26,
+    particleColor: 0xbfeaff,
+    particleSpeed: 13,
+    particleSway: 3,
+    lanterns: 0,
+    lanternColor: 0x7fd4ff,
+    groundMotes: 6,
+  },
+  skyline_rooftop: {
+    clouds: 3,
+    cloudColor: 0x5b4b8c,
+    cloudSpeed: 2.6,
+    particle: 'rain',
+    particleCount: 20,
+    particleColor: 0x9d7bff,
+    particleSpeed: 46,
+    particleSway: 0,
+    lanterns: 5,
+    lanternColor: 0xc86bff,
+    groundMotes: 4,
+  },
+} as const;
+
 /** Three environment features per arena, used by the preview right panel. */
 export const ARENA_FEATURES: Record<
   ArenaId,

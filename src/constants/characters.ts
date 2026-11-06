@@ -1,7 +1,11 @@
-import { characterCardTextureKey, characterShowcaseTextureKey } from '@/constants/assets';
+import {
+  characterCardTextureKey,
+  characterPortraitTextureKey,
+  characterShowcaseTextureKey,
+} from '@/constants/assets';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/constants/game';
 import { PALETTE_HEX } from '@/constants/palette';
-import type { CharacterConfig, CharacterId, StatKey } from '@/types/characters';
+import type { CharacterCombat, CharacterConfig, CharacterId, StatKey } from '@/types/characters';
 import type { StageLayout } from '@/types/stage';
 
 const W = GAME_WIDTH;
@@ -20,16 +24,88 @@ export const STAT_ROWS: readonly { key: StatKey; label: string }[] = [
 ] as const;
 
 /**
- * Single source of truth for the roster. Statistics, accent colours, names,
- * styles and texture keys live here; no UI component duplicates these values.
- * Kenji and Shadow keep the exact Phase 2 artwork and established identity.
+ * Single source of truth for the roster: stats, combat tuning, accent colours,
+ * names, styles and texture keys. Animations are defined once per fighter in
+ * the generated constants/fighterFrames.ts frame map; this profile supplies the
+ * per-fighter fighting-style differences on top of those shared definitions.
  */
+const COMBAT_PROFILES: Readonly<Record<CharacterId, CharacterCombat>> = {
+  kenji: {
+    damage: 1,
+    moveSpeed: 1,
+    defense: 1,
+    reach: 1,
+    energyGain: 1,
+    specialName: 'BLAZING FIST',
+    victoryPose: 'fist_raise',
+  },
+  shadow: {
+    damage: 0.92,
+    moveSpeed: 1.12,
+    defense: 0.9,
+    reach: 1.08,
+    energyGain: 1.1,
+    specialName: 'SHADOW SLASH',
+    victoryPose: 'ninja_pose',
+  },
+  blaze: {
+    damage: 1.1,
+    moveSpeed: 1.02,
+    defense: 0.95,
+    reach: 1.04,
+    energyGain: 1.05,
+    specialName: 'PHOENIX BURST',
+    victoryPose: 'flame_pose',
+  },
+  iron_fist: {
+    damage: 1.18,
+    moveSpeed: 0.8,
+    defense: 1.3,
+    reach: 0.9,
+    energyGain: 0.9,
+    specialName: 'IRON SHOCKWAVE',
+    victoryPose: 'flex',
+  },
+  storm: {
+    damage: 0.95,
+    moveSpeed: 1.2,
+    defense: 0.92,
+    reach: 1.06,
+    energyGain: 1.18,
+    specialName: 'THUNDER STRIKE',
+    victoryPose: 'fist_raise',
+  },
+  raven: {
+    damage: 1.02,
+    moveSpeed: 1.1,
+    defense: 0.92,
+    reach: 1.18,
+    energyGain: 1.02,
+    specialName: 'NIGHT BLADE',
+    victoryPose: 'blade_pose',
+  },
+  titan: {
+    damage: 1.28,
+    moveSpeed: 0.72,
+    defense: 1.35,
+    reach: 0.94,
+    energyGain: 0.86,
+    specialName: 'EARTHBREAKER',
+    victoryPose: 'flex',
+  },
+};
+
 const define = (
-  config: Omit<CharacterConfig, 'cardTextureKey' | 'showcaseTextureKey'>,
+  config: Omit<
+    CharacterConfig,
+    'cardTextureKey' | 'showcaseTextureKey' | 'portraitTextureKey' | 'combat'
+  >,
 ): CharacterConfig => ({
   ...config,
+  combat: COMBAT_PROFILES[config.id],
   cardTextureKey: characterCardTextureKey(config.id),
   showcaseTextureKey: characterShowcaseTextureKey(config.id),
+  portraitTextureKey: characterPortraitTextureKey(config.id),
 });
 
 export const CHARACTERS: readonly CharacterConfig[] = [

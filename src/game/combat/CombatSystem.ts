@@ -9,18 +9,21 @@ export interface CombatHit {
   attacker: Fighter;
   defender: Fighter;
   attack: AttackName;
+  attackLabel: string;
+  specialName: string;
   blocked: boolean;
   damage: number;
   x: number;
   y: number;
   combo: number;
+  heavy: boolean;
 }
 
 /**
  * Resolves real attack hitboxes against real body boxes. One hit per attack:
- * `hasHit` is latched even if the active frames keep overlapping. Damage,
- * blocking reduction, knockback, hitstun, energy and combo tracking all live
- * here so no scene duplicates combat rules.
+ * `hasHit` is latched even if the active frames keep overlapping. Damage uses
+ * each fighter's centralised combat profile; blocking reduces damage, and
+ * knockback / hitstun / energy / combo tracking all live here.
  */
 export class CombatSystem {
   private readonly onHit: (hit: CombatHit) => void;
@@ -39,28 +42,40 @@ export class CombatSystem {
     if (!runtime || runtime.hasHit || runtime.phase !== 'active') return;
     if (!hitboxIntersects(attacker, defender)) return;
 
-    runtime.hasHit = true;
     const config = ATTACKS[runtime.name];
-    const blocked = defender.blocking && defender.grounded && !defender.crouching;
-    const damage = Math.max(
-      1,
-      Math.round(config.damage * (blocked ? MATCH_CONFIG.BLOCK_REDUCTION : 1)),
-    );
+    const blocked = defender.blocking && defender.grounded;
+    const profile = attacker.config.combat;
+    const raw = config.damage * profile.damage * (blocked ? MATCH_CONFIG.BLOCK_REDUCTION : 1);
+    const damage = Math.max(1, Math.round(raw / defender.config.combat.defense));
+    // Compute the contact point while the active hitbox is still available.
     const point = contactPoint(attacker, defender);
+    runtime.hasHit = true;
 
     attacker.registerHit();
-    defender.applyHit(damage, config.knockback, config.hitstunMs, attacker.facing, blocked);
+    defender.applyHit(
+      damage,
+      config.knockback,
+      config.hitstunMs,
+      attacker.facing,
+      blocked,
+      config.knockdown,
+    );
 
     playSfx(blocked ? SFX.BLOCK : SFX.HIT);
+    if (!blocked && attacker.combo >= 3) playSfx(SFX.COMBO, 0.5);
+
     this.onHit({
       attacker,
       defender,
       attack: runtime.name,
+      attackLabel: config.label,
+      specialName: profile.specialName,
       blocked,
       damage,
       x: point.x,
       y: point.y,
       combo: attacker.combo,
+      heavy: runtime.name !== 'light_punch',
     });
   }
 }

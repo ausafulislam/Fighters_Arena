@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "FIGHTER'S ARENA - a 2D side-view modern HD pixel-art fighting game (Phase 6: Arena Selection through playable gameplay).",
+  "description": "FIGHTER'S ARENA - Modern HD pixel-art arcade fighting game with 784 frame-by-frame fighter animations, Arcade Physics and a state-based CPU (complete gameplay overhaul).",
   "license": "UNLICENSED",
   "engines": {
     "node": "^20.19.0 || >=22.12.0",

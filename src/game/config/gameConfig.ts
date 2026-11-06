@@ -41,6 +41,20 @@ export const GAME_CONFIG: Phaser.Types.Core.GameConfig = {
     target: TARGET_FPS,
   },
 
+  // Arcade Physics drives real gravity, ground detection, jump velocity,
+  // acceleration/deceleration and body separation during the match. Gravity is
+  // set per fighter body (see characters/Fighter.ts); world gravity stays at 0
+  // so every other scene is unaffected.
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { x: 0, y: 0 },
+      fixedStep: true,
+      fps: TARGET_FPS,
+      debug: false,
+    },
+  },
+
   audio: {
     // Web Audio API when supported; Phaser falls back to HTML5 Audio.
     disableWebAudio: false,

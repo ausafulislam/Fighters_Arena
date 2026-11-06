@@ -26,20 +26,35 @@ interface ButtonSpec {
   label: string;
 }
 
-const PAD: readonly ButtonSpec[] = [
-  { action: 'left', x: 38, y: 270, label: '' },
-  { action: 'right', x: 94, y: 270, label: '' },
-  { action: 'up', x: 66, y: 242, label: '' },
-  { action: 'down', x: 66, y: 298, label: '' },
-];
-
-const ACTIONS: readonly ButtonSpec[] = [
-  { action: 'light_punch', x: 512, y: 240, label: 'PUNCH' },
-  { action: 'heavy_punch', x: 560, y: 240, label: 'HEAVY' },
-  { action: 'kick', x: 608, y: 240, label: 'KICK' },
-  { action: 'special', x: 512, y: 292, label: 'SPECIAL' },
-  { action: 'block', x: 560, y: 292, label: 'BLOCK' },
-];
+/**
+ * Layout is derived from the chosen button size, so SMALL / MEDIUM / LARGE
+ * preferences can NEVER make two circular hit areas overlap. Left-handed mode
+ * mirrors the entire layout instead of duplicating buttons.
+ */
+function buildSpecs(size: number, leftHanded: boolean): ButtonSpec[] {
+  const padGap = size + 8;
+  const padCenterX = 76;
+  const padCenterY = 270;
+  const actionGap = size + 8;
+  const actionCenterX = 560;
+  const actionTopY = 240;
+  const actionBottomY = actionTopY + size + 12;
+  const raw: ButtonSpec[] = [
+    { action: 'left', x: padCenterX - padGap, y: padCenterY, label: '' },
+    { action: 'right', x: padCenterX + padGap, y: padCenterY, label: '' },
+    { action: 'up', x: padCenterX, y: padCenterY - padGap, label: '' },
+    { action: 'down', x: padCenterX, y: padCenterY + padGap, label: '' },
+    { action: 'light_punch', x: actionCenterX - actionGap, y: actionTopY, label: 'PUNCH' },
+    { action: 'heavy_punch', x: actionCenterX, y: actionTopY, label: 'HEAVY' },
+    { action: 'kick', x: actionCenterX + actionGap, y: actionTopY, label: 'KICK' },
+    { action: 'special', x: actionCenterX - actionGap, y: actionBottomY, label: 'SPECIAL' },
+    { action: 'block', x: actionCenterX, y: actionBottomY, label: 'BLOCK' },
+  ];
+  return raw.map((spec) => ({
+    ...spec,
+    x: leftHanded ? 640 - spec.x : spec.x,
+  }));
+}
 
 /**
  * Large, non-overlapping touch controls. Supports simultaneous pointers and
@@ -60,9 +75,8 @@ export class MobileControls {
 
     const scale = TOUCH_SIZE_SCALE[settings.touchControlSize as TouchControlSize] ?? 1;
     const size = Math.round(34 * scale);
-    for (const spec of [...PAD, ...ACTIONS]) {
-      const x = settings.leftHanded ? 640 - spec.x : spec.x;
-      this.buttons.push(this.createButton(spec, x, size));
+    for (const spec of buildSpecs(size, settings.leftHanded)) {
+      this.buttons.push(this.createButton(spec, spec.x, size));
     }
     this.setVisible(this.visible);
 

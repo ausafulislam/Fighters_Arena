@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FIGHTER'S ARENA — Animation Preview</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #101014;
+        color: #ffffff;
+        font-family: monospace;
+        overflow: hidden;
+      }
+      #game-root {
+        width: 100vw;
+        height: 100vh;
+      }
+      #help {
+        position: fixed;
+        right: 12px;
+        top: 8px;
+        font-size: 11px;
+        color: #ffc247;
+        z-index: 10;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-root"></div>
+    <div id="help">
+      ←/→ animation · ↑/↓ fighter · 1–7 fighter · SPACE pause · A auto-play all 21 · R reset
+    </div>
+    <script type="module" src="/src/tools/animPreview.ts"></script>
+  </body>
+</html>
