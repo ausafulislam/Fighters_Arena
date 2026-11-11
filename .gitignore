@@ -1,0 +1,54 @@
+# --- Dependencies ---------------------------------------------------------
+node_modules/
+.pnp/
+.pnp.*
+
+# --- Build / generated output --------------------------------------------
+dist/
+build/
+out/
+*.tsbuildinfo
+.vite/
+.cache/
+.eslintcache
+
+# --- Logs -----------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Local environment ----------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Test / coverage output ------------------------------------------------
+coverage/
+.nyc_output/
+
+# --- Editors & operating systems ------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# --- Temporary / binary artefacts that must not enter the repository -------
+*.asar
+*.tmp
+
+# Offline art/audio pipelines keep their source plates and scripts, but the
+# large WAV master, spectrogram, composite previews and browser screenshots
+# are regenerated working output, not project assets.
+assets_work/audio_work/
+assets_work/preview/
+
+# Python pipeline caches
+__pycache__/
+*.pyc
